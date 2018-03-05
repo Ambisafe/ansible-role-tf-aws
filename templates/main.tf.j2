@@ -1,0 +1,441 @@
+provider "aws" {
+    region = "{{ aws_region }}"
+}
+
+provider "aws" {
+    region = "us-east-1"
+    alias = "us-east-1"
+}
+
+data "aws_ami" "this" {
+    most_recent = true
+
+    filter {
+        name   = "name"
+        values = ["amzn-ami-*-amazon-ecs-optimized"]
+    }
+
+    owners = ["amazon"]
+}
+
+
+{% if aws_vpc_default == 'True' %}
+resource "aws_default_vpc" "this" {
+    tags {
+        Name = "Default VPC"
+    }
+}
+
+resource "aws_default_subnet" "a" {
+  availability_zone = "{{ aws_region }}a"
+}
+
+resource "aws_default_subnet" "b" {
+  availability_zone = "{{ aws_region }}b"
+}
+
+resource "aws_default_subnet" "c" {
+  availability_zone = "{{ aws_region }}c"
+}
+{% endif %}
+
+resource "aws_key_pair" "this" {
+  key_name   = "tf-{{ project_name }}-{{ project_deployment_environment }}-aws-key"
+  public_key = "{{ ecs_ssh_public_key }}"
+}
+
+resource "aws_launch_configuration" "ecs" {
+  name = "tf-ecs-lc-{{ project_name }}-{{ project_deployment_environment }}"
+  image_id                    = "${data.aws_ami.this.id}"
+  instance_type               = "{{ ecs_instance_type }}"
+  key_name                    = "tf-{{ project_name }}-{{ project_deployment_environment }}-aws-key"
+  user_data = <<EOF
+#!/bin/bash
+echo ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config
+EOF
+  iam_instance_profile = "${aws_iam_instance_profile.container_instance.name}"
+  security_groups             = ["${aws_security_group.this.id}"]
+  associate_public_ip_address = true
+
+  ebs_block_device {
+    device_name           = "/dev/xvdcz"
+    volume_size           = "{{ ecs_block_device_size }}"
+    volume_type           = "gp2"
+    delete_on_termination = true
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_autoscaling_group" "ecs" {
+
+  {% if aws_vpc_default == 'True' %}
+        vpc_zone_identifier  = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}" , "${aws_default_subnet.c.id}"]
+  {% else %}
+        vpc_zone_identifier  = ["{{ aws_subnet_id_a }}", "{{ aws_subnet_id_b }}" , "aws_subnet_id_c"]
+  {% endif %}
+
+  launch_configuration = "${aws_launch_configuration.ecs.name}"
+  min_size             = "{{ ecs_min_size }}"
+  max_size             = "{{ ecs_max_size }}"
+  desired_capacity     = "{{ ecs_desired_capacity }}"
+  termination_policies = ["OldestLaunchConfiguration", "ClosestToNextInstanceHour", "Default"]
+  target_group_arns = ["${aws_alb_target_group.this.arn}"]
+
+  tags = [{
+    key                 = "Name"
+    value               = "tf-ecs-asg-{{ project_name }}-{{ project_deployment_environment }}"
+    propagate_at_launch = true
+  }]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_security_group" "this" {
+  name        = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  description = "Container Instance Allowed Ports"
+{% if aws_vpc_default == 'True' %}
+  vpc_id = "${aws_default_vpc.this.id}"
+{% else %}
+  vpc_id = "{{ aws_vpc_id }}"
+{% endif %}
+
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = [ "0.0.0.0/0" ]
+  }
+
+  ingress {
+      from_port = 443
+      to_port = 443
+      protocol = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+      from_port = 80
+      to_port = 80
+      protocol = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  }
+}
+
+
+# Make this a var that an get passed in?
+resource "aws_ecs_cluster" "cluster" {
+  name = "tf-ecs-{{ project_name }}-{{ project_deployment_environment }}-cluster"
+}
+
+##### db
+
+resource "aws_security_group" "rds_security_group" {
+  name        = "tf-rds-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  description = "Container Instance Allowed Ports"
+{% if aws_vpc_default == 'True' %}
+  vpc_id = "${aws_default_vpc.this.id}"
+{% else %}
+  vpc_id = "{{ aws_vpc_id }}"
+{% endif %}
+
+  ingress {
+    from_port = 3306
+    to_port = 3306
+    protocol = "tcp"
+    cidr_blocks = [ "0.0.0.0/0" ]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "tf-rds-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  }
+}
+
+resource "aws_db_instance" "default" {
+  identifier = "tf-rds-{{ project_name }}-{{ project_deployment_environment }}"
+  engine               = "{{ db_engine }}"
+  engine_version       = "{{ db_engine_version }}"
+  instance_class       = "{{ db_instance_type }}"
+  allocated_storage    = {{ db_allocated_storage_size }}
+  storage_type         = "gp2"
+  name                 = "{{ db_name }}"
+  username             = "{{ db_username }}"
+  password             = "{{ db_password }}"
+  vpc_security_group_ids = ["${aws_security_group.rds_security_group.id}"]
+  skip_final_snapshot = {{ db_skip_final_snapshot }}
+  tags {
+    Name = "rds-{{ project_name }}-{{ project_deployment_environment }}"
+  }
+}
+
+resource "aws_alb" "this" {
+  name = "tf-ecs-{{ project_name }}-{{ project_deployment_environment }}-alb"
+  security_groups = [ "${aws_security_group.this.id}" ]
+
+  # Keep these arguments as is:
+
+  {% if aws_vpc_default == 'True' %}
+        subnets = [ "${aws_default_subnet.a.id}" , "${aws_default_subnet.b.id}" , "${aws_default_subnet.c.id}"]
+  {% else %}
+        subnets = [ "{{ aws_subnet_id_a }}" , "{{ aws_subnet_id_b }}" , "{{ aws_subnet_id_c }}"]
+  {% endif %}
+  internal = false
+}
+
+resource "aws_alb_listener" "default" {
+  load_balancer_arn = "${aws_alb.this.arn}"
+  port = "443"
+  protocol = "HTTPS"
+  ssl_policy = "ELBSecurityPolicy-2016-08"
+  certificate_arn = "${aws_acm_certificate.default.arn}"
+  default_action {
+    target_group_arn = "${aws_alb_target_group.this.arn}"
+    type = "forward"
+  }
+}
+
+resource "aws_alb_target_group" "this" {
+  name = "tf-ecs-{{ project_name }}-alb-tg"
+  port = 80
+  protocol = "HTTP"
+{% if aws_vpc_default == 'True' %}
+  vpc_id = "${aws_default_vpc.this.id}"
+{% else %}
+  vpc_id = "{{ aws_vpc_id }}"
+{% endif %}
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+################### iam ###########################
+data "aws_iam_policy_document" "container_instance_ec2_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role" "container_instance_ec2" {
+  name = "tf_{{ project_name }}_{{ project_deployment_environment }}_ContainerInstanceProfile"
+  assume_role_policy = "${data.aws_iam_policy_document.container_instance_ec2_assume_role.json}"
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_service_role" {
+  role = "${aws_iam_role.container_instance_ec2.name}"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+resource "aws_iam_instance_profile" "container_instance" {
+  name = "${aws_iam_role.container_instance_ec2.name}"
+  role = "${aws_iam_role.container_instance_ec2.name}"
+}
+
+data "aws_iam_policy_document" "this" {
+  statement {
+
+    actions = [
+       "logs:CreateLogStream",
+       "logs:CreateLogGroup",
+       "logs:PutLogEvents"
+    ]
+
+    resources = [
+      "arn:aws:logs:*:*:*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "this" {
+  name        = "tf_{{ project_name }}_{{ project_deployment_environment }}_ec2_cw"
+  policy      = "${data.aws_iam_policy_document.this.json}"
+}
+
+resource "aws_iam_policy_attachment" "this" {
+  name       = "tf_{{ project_name }}_{{ project_deployment_environment }}_ec2-cw-attachment"
+  roles      = ["${aws_iam_role.container_instance_ec2.name}"]
+  policy_arn = "${aws_iam_policy.this.arn}"
+}
+
+#
+# ECS Service IAM permissions
+#
+
+data "aws_iam_policy_document" "ecs_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type = "Service"
+      identifiers = ["ecs.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role" "ecs_service_role" {
+  name = "tf_{{ project_name }}_{{ project_deployment_environment }}_ecs_ServiceRole"
+  assume_role_policy = "${data.aws_iam_policy_document.ecs_assume_role.json}"
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_service_role" {
+  role = "${aws_iam_role.ecs_service_role.name}"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
+}
+
+data "aws_iam_policy_document" "ecs_autoscale_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type = "Service"
+      identifiers = ["application-autoscaling.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role" "ecs_autoscale_role" {
+  name = "tf_{{ project_name }}_{{ project_deployment_environment }}_ecs_AutoscaleRole"
+  assume_role_policy = "${data.aws_iam_policy_document.ecs_autoscale_assume_role.json}"
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_service_autoscaling_role" {
+  role = "${aws_iam_role.ecs_autoscale_role.name}"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole"
+}
+
+################### route53 ###########################
+data "aws_route53_zone" "selected" {
+  name = "{{ route53_domain_name }}."
+}
+
+resource "aws_route53_record" "this" {
+  zone_id = "${data.aws_route53_zone.selected.zone_id}"
+  name = "{{ project_deployment_environment }}.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+  type = "A"
+  alias {
+    name = "${aws_cloudfront_distribution.this.domain_name}"
+    zone_id = "${aws_cloudfront_distribution.this.hosted_zone_id}"
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "cert_default" {
+  name = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_name}"
+  type = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_type}"
+  zone_id = "${data.aws_route53_zone.selected.id}"
+  records = ["${aws_acm_certificate.default.domain_validation_options.0.resource_record_value}"]
+  ttl = 60
+}
+
+
+resource "aws_route53_record" "cert_alternative" {
+  name = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_name}"
+  type = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_type}"
+  zone_id = "${data.aws_route53_zone.selected.id}"
+  records = ["${aws_acm_certificate.default.domain_validation_options.1.resource_record_value}"]
+  ttl = 60
+}
+
+######################## acm ###############################
+resource "aws_acm_certificate" "us-east-1" {
+  provider = "aws.us-east-1"
+  domain_name = "{{ project_name }}.{{ route53_domain_name }}"
+  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+  validation_method = "DNS"
+}
+
+resource "aws_acm_certificate_validation" "default" {
+  certificate_arn = "${aws_acm_certificate.default.arn}"
+  validation_record_fqdns = ["${aws_route53_record.cert_default.fqdn}", "${aws_route53_record.cert_alternative.fqdn}"]
+}
+
+resource "aws_acm_certificate" "default" {
+  domain_name = "{{ project_name }}.{{ route53_domain_name }}"
+  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+  validation_method = "DNS"
+}
+
+######################### cloudfront #######################
+resource "aws_cloudfront_distribution" "this" {
+  origin {
+    domain_name = "${aws_alb.this.dns_name}"
+    origin_id = "origin-elb-{{ project_deployment_environment }}-{{ project_name }}"
+
+    custom_origin_config {
+      http_port = 80
+      https_port = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols = [
+        "TLSv1.2",
+        "TLSv1.1",
+        "TLSv1"]
+    }
+
+  }
+  enabled = true
+  aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+
+  default_cache_behavior {
+    allowed_methods = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
+    cached_methods = ["HEAD", "GET"]
+    compress = true
+    target_origin_id = "origin-elb-{{ project_deployment_environment }}-{{ project_name }}"
+
+    forwarded_values {
+      headers = ["*"]
+      query_string = true
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl     = 0
+    default_ttl = 86400
+    max_ttl     = 2592000
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    acm_certificate_arn = "${aws_acm_certificate.us-east-1.arn}"
+    ssl_support_method = "sni-only"
+  }
+}

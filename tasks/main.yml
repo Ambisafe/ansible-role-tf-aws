@@ -1,0 +1,71 @@
+---
+- assert:
+    that:
+      - "aws_vpc_id is defined"
+      - "aws_vpc_id != ''"
+    msg: "AMBISAFE AWS_VPC_ID is not defined"
+  when: "aws_vpc_default == 'False'"
+  tags: configuration
+
+- assert:
+    that:
+      - "aws_subnet_id_a is defined"
+      - "aws_subnet_id_b is defined"
+      - "aws_subnet_id_c is defined"
+      - "aws_vpc_id != ''"
+    msg: "AMBISAFE AWS_SUBNET_ID is not defined"
+  when: "aws_vpc_default == 'False'"
+  tags: configuration
+
+# got terraform infrastructures for aws
+- name: Create terraform data directory
+  file:
+    path: "{{ terraform_data_dir }}/{{ project_name }}/{{ project_deployment_environment }}"
+    state: directory
+  tags: configuration
+
+- name: Clean modules path
+  file:
+    state: absent
+    path: "{{ terraform_data_dir }}/{{ project_name }}/{{ project_deployment_environment }}/modules"
+  tags: configuration
+
+- name: Copy terraform files to host
+  copy:
+    src: "terraform_files/"
+    dest: "{{ terraform_data_dir }}/{{ project_name }}/{{ project_deployment_environment }}/"
+    force: yes
+  tags: configuration
+
+- name: Create TF files
+  template:
+    src: main.tf.j2
+    dest: "{{ terraform_data_dir }}/{{ project_name }}/{{ project_deployment_environment }}/main.tf"
+  tags: configuration
+
+# run terraform init
+- name: Run the terraform initialization
+  command: "terraform init -no-color"
+  args:
+    chdir: "{{ terraform_data_dir }}/{{ project_name }}/{{ project_deployment_environment }}"
+  tags: configuration
+
+- name: Run the terraform update modules
+  command: "terraform get -update -no-color"
+  args:
+    chdir: "{{ terraform_data_dir }}/{{ project_name }}/{{ project_deployment_environment }}"
+  tags: configuration
+
+#run terraform plan
+- name: Run the terraform plan
+  command: "terraform plan -no-color "
+  args:
+    chdir: "{{ terraform_data_dir }}/{{ project_name }}/{{ project_deployment_environment }}"
+  tags: configuration
+
+#run terraform apply -auto-approve
+- name: Run the installation on AWS
+  command: "terraform apply -auto-approve -no-color "
+  args:
+    chdir: "{{ terraform_data_dir }}/{{ project_name }}/{{ project_deployment_environment }}"
+  tags: apply
