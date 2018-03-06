@@ -25,8 +25,7 @@ db_username: ""
 db_password: ""
 db_skip_final_snapshot: "true"
 
-
-terraform_dir: "/tmp/terraform"
+terraform_dir: "/opt/terraform"
 terraform_data_dir: "/opt/terraform/data"
 
 route53_domain_name: ""
