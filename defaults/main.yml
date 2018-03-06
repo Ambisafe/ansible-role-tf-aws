@@ -1,32 +1,20 @@
 ---
-project_name: ""
-project_deployment_environment: ""
-
-aws_region : ""
 aws_vpc_default: "True"
-aws_vpc_id: ""
-aws_subnet_id_a : ""
-aws_subnet_id_b : ""
-aws_subnet_id_c : ""
 
 ecs_min_size: 0
 ecs_max_size: 1
 ecs_desired_capacity: 1
 ecs_instance_type: "t2.micro"
 ecs_block_device_size: 22
-ecs_ssh_public_key: ""
 
 db_instance_type: "db.t2.micro"
 db_engine: "mysql"
 db_engine_version: "5.6.37"
 db_allocated_storage_size: 10
-db_name: ""
-db_username: ""
-db_password: ""
+
 db_skip_final_snapshot: "true"
 
 terraform_dir: "/opt/terraform"
 terraform_data_dir: "/opt/terraform/data"
 
-route53_domain_name: ""
 
