@@ -192,8 +192,14 @@ resource "aws_db_instance" "default" {
 
 resource "aws_route53_record" "rds" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
+{% if project_deployment_environment == '' %}
+  name = "rds.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+{% else %}
   name = "rds.{{ project_deployment_environment }}.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+{% endif %}
   type = "CNAME"
+
+
   ttl = "300"
   records = ["${aws_db_instance.default.address}"]
 }
@@ -352,7 +358,11 @@ data "aws_route53_zone" "selected" {
 
 resource "aws_route53_record" "this" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
-  name = "{{ project_deployment_environment }}.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+{% if project_deployment_environment == '' %}
+  name = "rds.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+{% else %}
+  name = "rds.{{ project_deployment_environment }}.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+{% endif %}
   type = "A"
   alias {
     name = "${aws_cloudfront_distribution.this.domain_name}"
