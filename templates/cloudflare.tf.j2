@@ -4,6 +4,9 @@ provider "cloudflare" {
 }
 
 resource "cloudflare_record" "this" {
+{% if project_zone_main != "yes" %}
+  count = 0
+{% endif %}
   domain = "{{ route53_domain_name }}"
 {% if project_deployment_environment == 'prod' %}
   name = "{{ project_name }}.{{ route53_domain_name }}"
