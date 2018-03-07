@@ -40,7 +40,7 @@ resource "aws_default_subnet" "c" {
 {% endif %}
 
 resource "aws_key_pair" "this" {
-  key_name   = "tf-{{ project_name }}-{{ project_deployment_environment }}-aws-key"
+  key_name   = "tf-{{ project_name }}-{{ project_deployment_environment }}-awx-key"
   public_key = "{{ ecs_ssh_public_key }}"
 }
 
