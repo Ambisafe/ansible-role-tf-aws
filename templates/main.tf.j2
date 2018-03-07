@@ -52,7 +52,7 @@ resource "aws_launch_configuration" "ecs" {
   user_data = <<EOF
 #!/bin/bash
 echo ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config
-echo ECS_ENGINE_AUTH_TYPE=docker
+echo ECS_ENGINE_AUTH_TYPE=docker >> /etc/ecs/ecs.config
 echo "ECS_ENGINE_AUTH_DATA={\"https://index.docker.io/v1/\":{\"username\":\"{{ docker_hub_username }}\",\"password\":\"{{ docker_hub_password }}\""}}" >> /etc/ecs/ecs.config
 EOF
   iam_instance_profile = "${aws_iam_instance_profile.container_instance.name}"
