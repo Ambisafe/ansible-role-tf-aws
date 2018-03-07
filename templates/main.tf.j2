@@ -69,7 +69,6 @@ EOF
   lifecycle {
     create_before_destroy = true
   }
-  depends_on = ["aws_autoscaling_group.ecs"]
 }
 
 resource "aws_autoscaling_group" "ecs" {
@@ -86,6 +85,8 @@ resource "aws_autoscaling_group" "ecs" {
   desired_capacity     = "{{ ecs_desired_capacity }}"
   termination_policies = ["OldestLaunchConfiguration", "ClosestToNextInstanceHour", "Default"]
   target_group_arns = ["${aws_alb_target_group.this.arn}"]
+
+  depends_on = ["aws_launch_configuration.ecs"]
 
   tags = [{
     key                 = "Name"
