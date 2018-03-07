@@ -86,8 +86,6 @@ resource "aws_autoscaling_group" "ecs" {
   termination_policies = ["OldestLaunchConfiguration", "ClosestToNextInstanceHour", "Default"]
   target_group_arns = ["${aws_alb_target_group.this.arn}"]
 
-  depends_on = ["aws_launch_configuration.ecs"]
-
   tags = [{
     key                 = "Name"
     value               = "tf-ecs-asg-{{ project_name }}-{{ project_deployment_environment }}"
