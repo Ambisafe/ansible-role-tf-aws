@@ -48,7 +48,7 @@ resource "aws_launch_configuration" "ecs" {
   name = "tf-ecs-lc-{{ project_name }}-{{ project_deployment_environment }}"
   image_id                    = "${data.aws_ami.this.id}"
   instance_type               = "{{ ecs_instance_type }}"
-  key_name                    = "tf-{{ project_name }}-{{ project_deployment_environment }}-aws-key"
+  key_name                    = "tf-{{ project_name }}-{{ project_deployment_environment }}-awx-key"
   user_data = <<EOF
 #!/bin/bash
 echo ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config
