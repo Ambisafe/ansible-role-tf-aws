@@ -218,7 +218,7 @@ resource "aws_alb_listener" "default" {
 }
 
 resource "aws_alb_target_group" "this" {
-  name = "tf-ecs-{{ project_name }}-alb-tg"
+  name = "tf-ecs-{{ project_name }}-{{ project_deployment_environment }}-alb-tg"
   port = 80
   protocol = "HTTP"
 {% if aws_vpc_default == 'true' %}
