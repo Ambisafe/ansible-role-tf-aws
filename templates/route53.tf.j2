@@ -12,7 +12,7 @@ resource "aws_route53_record" "rds" {
 {% endif %}
   type = "CNAME"
 
-  ttl = "300"
+  ttl = 300
   records = ["${aws_db_instance.default.address}"]
 }
 
@@ -36,7 +36,7 @@ resource "aws_route53_record" "cert_default" {
   type = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_type}"
   zone_id = "${data.aws_route53_zone.selected.id}"
   records = ["${aws_acm_certificate.default.domain_validation_options.0.resource_record_value}"]
-  ttl = 60
+  ttl = 300
 }
 
 
@@ -45,7 +45,7 @@ resource "aws_route53_record" "cert_alternative" {
   type = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_type}"
   zone_id = "${data.aws_route53_zone.selected.id}"
   records = ["${aws_acm_certificate.default.domain_validation_options.1.resource_record_value}"]
-  ttl = 60
+  ttl = 300
 }
 
 {% if aws_region != 'us-east-1' %}

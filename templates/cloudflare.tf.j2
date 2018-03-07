@@ -32,7 +32,7 @@ resource "cloudflare_record" "cert_default" {
   name = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_name}"
   type = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_type}"
   value = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_value}"
-  ttl = 60
+  ttl = 300
 }
 
 
@@ -41,7 +41,7 @@ resource "cloudflare_record" "cert_alternative" {
   name = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_name}"
   type = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_type}"
   value = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_value}"
-  ttl = 60
+  ttl = 300
 }
 
 {% if aws_region != 'us-east-1' %}
