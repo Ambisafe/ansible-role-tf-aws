@@ -37,6 +37,11 @@
     force: yes
   tags: configuration
 
+- name: Compile nginx/nginx.conf
+  command: bash -c "cat {{ role_path }}/files/nginx/nginx.conf|base64"
+  register: nginx_conf_b64
+  tags: configuration
+
 - name: Create TF files
   template:
     src: main.tf.j2
