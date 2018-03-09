@@ -11,7 +11,7 @@ resource "aws_elasticache_replication_group" "this" {
 }
 
 resource "aws_security_group" "redis" {
-  name        = "tf-ecc-sg-redis-{ project_name }}-{{ project_deployment_environment }}"
+  name        = "tf-ecc-sg-redis-{{ project_name }}-{{ project_deployment_environment }}"
   description = "elasticache"
 
 {% if aws_vpc_default == 'true' %}
