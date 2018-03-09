@@ -35,7 +35,7 @@ resource "aws_security_group" "redis" {
   }
 
   tags {
-    Name = "tf-ecc-eg-redis-{ project_name }}-{{ project_deployment_environment }}"
+    Name = "tf-ecc-eg-redis-{{ project_name }}-{{ project_deployment_environment }}"
   }
 {% if project_zone_cloudflare == 'true' %}
   depends_on = ["aws_elasticache_subnet_group.this", "cloudflare_record.redis"]
