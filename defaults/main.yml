@@ -12,6 +12,12 @@ db_engine: "mysql"
 db_engine_version: "5.6.37"
 db_allocated_storage_size: 10
 
+ecc_engine: "redis"
+ecc_node_type: "cache.t2.small"
+ecc_port: 6379
+ecc_num_cache_nodes: 1
+ecc_parameter_group_name: "default.redis3.2"
+
 db_skip_final_snapshot: "true"
 
 terraform_dir: "/opt/terraform"

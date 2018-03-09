@@ -30,6 +30,10 @@ resource "cloudflare_record" "rds" {
   ttl = 300
 }
 
+{% if project_ecc == 'true' %}
+  {% include './templates/cloudflare_ecc.tf.j2' %}
+{% endif %}
+
 resource "cloudflare_record" "cert_default" {
   domain = "{{ route53_domain_name }}"
   name = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_name}"

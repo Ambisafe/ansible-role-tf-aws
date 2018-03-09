@@ -1,0 +1,11 @@
+resource "cloudflare_record" "redis" {
+  domain = "{{ route53_domain_name }}"
+{% if project_deployment_environment == 'prod' %}
+  name = "redis.{{ project_name }}.{{ route53_domain_name }}"
+{% else %}
+  name = "redis.{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"
+{% endif %}
+  value = "${aws_elasticache_replication_group.this.primary_endpoint_address}"
+  type = "CNAME"
+  ttl = 300
+}

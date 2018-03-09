@@ -1,0 +1,54 @@
+resource "aws_cloudfront_distribution" "this" {
+  origin {
+    domain_name = "${aws_alb.this.dns_name}"
+    origin_id = "origin-elb-{{ project_deployment_environment }}-{{ project_name }}"
+
+    custom_origin_config {
+      http_port = 80
+      https_port = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols = [
+        "TLSv1.2",
+        "TLSv1.1",
+        "TLSv1"]
+    }
+
+  }
+  enabled = true
+  aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+
+  default_cache_behavior {
+    allowed_methods = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
+    cached_methods = ["HEAD", "GET"]
+    compress = true
+    target_origin_id = "origin-elb-{{ project_deployment_environment }}-{{ project_name }}"
+
+    forwarded_values {
+      headers = ["*"]
+      query_string = true
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl     = 0
+    default_ttl = 86400
+    max_ttl     = 2592000
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+  {% if aws_region != 'us-east-1' %}
+    acm_certificate_arn = "${aws_acm_certificate.us-east-1.arn}"
+  {% else %}
+    acm_certificate_arn = "${aws_acm_certificate.default.arn}"
+  {% endif %}
+    ssl_support_method = "sni-only"
+  }
+}

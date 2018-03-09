@@ -16,6 +16,10 @@ resource "aws_route53_record" "rds" {
   records = ["${aws_db_instance.default.address}"]
 }
 
+{% if project_ecc == 'true' %}
+  {% include './templates/route53_ecc.tf.j2' %}
+{% endif %}
+
 resource "aws_route53_record" "this" {
 {% if project_zone_main != "yes" %}
   count = 0

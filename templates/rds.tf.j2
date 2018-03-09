@@ -1,0 +1,44 @@
+resource "aws_security_group" "rds_security_group" {
+  name        = "tf-rds-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  description = "Container Instance Allowed Ports"
+{% if aws_vpc_default == 'true' %}
+  vpc_id = "${aws_default_vpc.this.id}"
+{% else %}
+  vpc_id = "{{ aws_vpc_id }}"
+{% endif %}
+
+  ingress {
+    from_port = 3306
+    to_port = 3306
+    protocol = "tcp"
+    cidr_blocks = [ "0.0.0.0/0" ]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "tf-rds-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  }
+}
+
+resource "aws_db_instance" "default" {
+  identifier = "tf-rds-{{ project_name }}-{{ project_deployment_environment }}"
+  engine               = "{{ db_engine }}"
+  engine_version       = "{{ db_engine_version }}"
+  instance_class       = "{{ db_instance_type }}"
+  allocated_storage    = {{ db_allocated_storage_size }}
+  storage_type         = "gp2"
+  name                 = "{{ db_name }}"
+  username             = "{{ db_username }}"
+  password             = "{{ db_password }}"
+  vpc_security_group_ids = ["${aws_security_group.rds_security_group.id}"]
+  skip_final_snapshot = {{ db_skip_final_snapshot }}
+  tags {
+    Name = "rds-{{ project_name }}-{{ project_deployment_environment }}"
+  }
+}

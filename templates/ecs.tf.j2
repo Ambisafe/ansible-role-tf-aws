@@ -1,0 +1,118 @@
+data "aws_ami" "this" {
+    most_recent = true
+
+    filter {
+        name   = "name"
+        values = ["amzn-ami-*-amazon-ecs-optimized"]
+    }
+
+    owners = ["amazon"]
+}
+
+resource "aws_key_pair" "this" {
+  key_name   = "tf-{{ project_name }}-{{ project_deployment_environment }}-awx-key"
+  public_key = "{{ ecs_ssh_public_key }}"
+}
+
+resource "aws_launch_configuration" "ecs" {
+  name = "tf-ecs-lc-{{ project_name }}-{{ project_deployment_environment }}"
+  image_id                    = "${data.aws_ami.this.id}"
+  instance_type               = "{{ ecs_instance_type }}"
+  key_name                    = "tf-{{ project_name }}-{{ project_deployment_environment }}-awx-key"
+  user_data = <<EOF
+#!/bin/bash
+echo ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config
+echo ECS_ENGINE_AUTH_TYPE=docker >> /etc/ecs/ecs.config
+echo "ECS_ENGINE_AUTH_DATA={\"https://index.docker.io/v1/\":{\"username\":\"{{ docker_hub_username }}\",\"password\":\"{{ docker_hub_password }}\"}}" >> /etc/ecs/ecs.config
+echo "{{ nginx_conf_b64.stdout }}" | base64 --decode > /etc/ecs/nginx.template
+EOF
+  iam_instance_profile = "${aws_iam_instance_profile.container_instance.name}"
+  security_groups             = ["${aws_security_group.this.id}"]
+  associate_public_ip_address = true
+
+  ebs_block_device {
+    device_name           = "/dev/xvdcz"
+    volume_size           = "{{ ecs_block_device_size }}"
+    volume_type           = "gp2"
+    delete_on_termination = true
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_autoscaling_group" "ecs" {
+  name = "tf-ecs-asg-{{ project_name }}-{{ project_deployment_environment }}"
+
+  {% if aws_vpc_default == 'true' %}
+        vpc_zone_identifier  = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}" , "${aws_default_subnet.c.id}"]
+  {% else %}
+        vpc_zone_identifier  = ["{{ aws_subnet_id_a }}", "{{ aws_subnet_id_b }}" , "aws_subnet_id_c"]
+  {% endif %}
+
+  launch_configuration = "${aws_launch_configuration.ecs.name}"
+  min_size             = "{{ ecs_min_size }}"
+  max_size             = "{{ ecs_max_size }}"
+  desired_capacity     = "{{ ecs_desired_capacity }}"
+  termination_policies = ["OldestLaunchConfiguration", "ClosestToNextInstanceHour", "Default"]
+  target_group_arns = ["${aws_alb_target_group.this.arn}"]
+
+  tags = [{
+    key                 = "Name"
+    value               = "tf-ecs-asg-{{ project_name }}-{{ project_deployment_environment }}"
+    propagate_at_launch = true
+  }]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_security_group" "this" {
+  name        = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  description = "Container Instance Allowed Ports"
+{% if aws_vpc_default == 'true' %}
+  vpc_id = "${aws_default_vpc.this.id}"
+{% else %}
+  vpc_id = "{{ aws_vpc_id }}"
+{% endif %}
+
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = [ "0.0.0.0/0" ]
+  }
+
+  ingress {
+      from_port = 443
+      to_port = 443
+      protocol = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+      from_port = 80
+      to_port = 80
+      protocol = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  }
+}
+
+
+# Make this a var that an get passed in?
+resource "aws_ecs_cluster" "cluster" {
+  name = "tf-ecs-{{ project_name }}-{{ project_deployment_environment }}-cluster"
+}

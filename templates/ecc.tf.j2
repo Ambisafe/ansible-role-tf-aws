@@ -1,0 +1,48 @@
+resource "aws_elasticache_replication_group" "this" {
+  replication_group_id          = "tf-ecc-{{ project_name }}-{{ project_deployment_environment }}"
+  node_type                     = "{{ ecc_node_type }}"
+  number_cache_clusters         = {{ ecc_num_cache_nodes }}
+  port                          = {{ ecc_port }}
+  parameter_group_name          = "{{ ecc_parameter_group_name }}"
+  availability_zones            = ["{{ aws_region }}a", "{{ aws_region }}b"]
+  subnet_group_name = "${aws_elasticache_subnet_group.this.name}"
+  automatic_failover_enabled    = false
+}
+
+resource "aws_security_group" "redis" {
+  name        = "tf-ecc-sg-redis-{ project_name }}-{{ project_deployment_environment }}"
+  description = "elasticache"
+
+{% if aws_vpc_default == 'true' %}
+  vpc_id = "${aws_default_vpc.this.id}"
+{% else %}
+  vpc_id = "{{ aws_vpc_id }}"
+{% endif %}
+
+  ingress {
+        from_port = 6379
+        to_port = 6379
+        protocol = "tcp"
+        security_groups = ["${aws_security_group.this.id}"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "tf-ecc-eg-redis-{ project_name }}-{{ project_deployment_environment }}"
+  }
+}
+
+resource "aws_elasticache_subnet_group" "this" {
+  name       = "tf-ecc-subnet-{{ project_name }}-{{ project_deployment_environment }}"
+{% if aws_vpc_default == 'true' %}
+  subnet_ids = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}", "${aws_default_subnet.c.id}"]
+{% else %}
+  subnet_ids = ["{{ aws_subnet_id_a }}" , "{{ aws_subnet_id_b }}" , "{{ aws_subnet_id_c }}"]
+{% endif %}
+}
