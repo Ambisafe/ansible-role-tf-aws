@@ -8,7 +8,7 @@ resource "aws_elasticache_replication_group" "this" {
   availability_zones            = ["{{ aws_region }}a", "{{ aws_region }}b", "{{ aws_region }}c"]
   subnet_group_name = "${aws_elasticache_subnet_group.this.name}"
   automatic_failover_enabled    = false
-  security_group_ids = [${aws_security_group.this.id}", "${aws_security_group.redis.id}"]
+  security_group_ids = ["${aws_security_group.this.id}", "${aws_security_group.redis.id}"]
 }
 
 resource "aws_security_group" "redis" {
