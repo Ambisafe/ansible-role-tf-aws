@@ -9,5 +9,4 @@ resource "aws_route53_record" "redis" {
 
   ttl = 300
   records = ["${aws_elasticache_replication_group.this.primary_endpoint_address}"]
-  depends_on = ["aws_elasticache_replication_group.this"]
 }

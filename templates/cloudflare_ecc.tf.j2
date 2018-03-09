@@ -8,5 +8,4 @@ resource "cloudflare_record" "redis" {
   value = "${aws_elasticache_replication_group.this.primary_endpoint_address}"
   type = "CNAME"
   ttl = 300
-  depends_on = ["aws_elasticache_replication_group.this"]
 }
