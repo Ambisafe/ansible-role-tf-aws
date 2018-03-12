@@ -24,6 +24,7 @@ resource "aws_launch_configuration" "ecs" {
 echo ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config
 echo ECS_ENGINE_AUTH_TYPE=docker >> /etc/ecs/ecs.config
 echo "ECS_ENGINE_AUTH_DATA={\"https://index.docker.io/v1/\":{\"username\":\"{{ docker_hub_username }}\",\"password\":\"{{ docker_hub_password }}\"}}" >> /etc/ecs/ecs.config
+echo ECS_CONTAINER_STOP_TIMEOUT=60s >> /etc/ecs/ecs.config
 echo "{{ nginx_conf_b64.stdout }}" | base64 --decode > /etc/ecs/nginx.template
 EOF
   iam_instance_profile = "${aws_iam_instance_profile.container_instance.name}"
