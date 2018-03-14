@@ -37,7 +37,20 @@ resource "aws_db_instance" "default" {
   username             = "{{ db_username }}"
   password             = "{{ db_password }}"
   vpc_security_group_ids = ["${aws_security_group.rds_security_group.id}"]
-  skip_final_snapshot = {{ db_skip_final_snapshot }}
+
+  auto_minor_version_upgrade = "false"
+  final_snapshot_identifier  = "tf-rds-{{ project_name }}-{{ project_deployment_environment }}-{{ db_engine }}"
+  copy_tags_to_snapshot      = "false"
+
+{% if project_deployment_environment == 'prod' %}
+  skip_final_snapshot = "true"
+  backup_retention_period    = "30"
+  backup_window              = "04:00-04:30"
+  maintenance_window         = "sun:04:30-sun:05:30"
+{% else %}
+  skip_final_snapshot = "false"
+{% endif %}
+
   tags {
     Name = "rds-{{ project_name }}-{{ project_deployment_environment }}"
   }
