@@ -13,8 +13,30 @@ resource "aws_route53_record" "rds" {
   type = "CNAME"
 
   ttl = 300
+
+{% if project_zone_rds_cluster == 'true' %}
+  records = ["${aws_rds_cluster.default.endpoint}"]
+{% else %}
   records = ["${aws_db_instance.default.address}"]
+{% endif %}
+
 }
+
+{% if project_zone_rds_cluster == 'true' %}
+
+resource "aws_route53_record" "rds_reader" {
+  zone_id = "${data.aws_route53_zone.selected.zone_id}"
+{% if project_deployment_environment == 'prod' %}
+  name = "reader.rds.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+{% else %}
+  name = "reader.rds.{{ project_deployment_environment }}.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+{% endif %}
+  type = "CNAME"
+
+  ttl = 300
+  records = ["${aws_rds_cluster.default.reader_endpoint}"]
+}
+{% endif %}
 
 {% if project_ecc == 'true' %}
   {% include './templates/route53_ecc.tf.j2' %}

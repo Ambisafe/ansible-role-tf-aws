@@ -32,9 +32,13 @@ resource "aws_default_subnet" "c" {
 
 {% include './templates/ecs.tf.j2' %}
 
-##### db ######
+##### rds ######
 
-{% include './templates/rds.tf.j2' %}
+{% if project_zone_rds_cluster == 'true' %}
+  {% include './templates/rds_cluster.tf.j2' %}
+{% else %}
+  {% include './templates/rds.tf.j2' %}
+{% endif %}
 
 ##### alb #####
 

@@ -1,0 +1,82 @@
+
+data "aws_availability_zones" "available" {}
+
+resource "aws_security_group" "rds_security_group" {
+  name        = "tf-rds-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  description = "Container Instance Allowed Ports"
+{% if aws_vpc_default == 'true' %}
+  vpc_id = "${aws_default_vpc.this.id}"
+{% else %}
+  vpc_id = "{{ aws_vpc_id }}"
+{% endif %}
+
+  ingress {
+    from_port = 3306
+    to_port = 3306
+    protocol = "tcp"
+    security_groups = ["${aws_security_group.this.id}"]
+  }
+
+  ingress {
+    from_port = 5432
+    to_port = 5432
+    protocol = "tcp"
+    security_groups = ["${aws_security_group.this.id}"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "tf-rds-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  }
+}
+
+resource "aws_db_subnet_group" "rds_cluster" {
+
+    name = "tf-rds-cluster-subnet-{{ project_name }}-{{ project_deployment_environment }}"
+    description = "Allowed subnets for RDS DB cluster instances"
+
+    {% if aws_vpc_default == 'true' %}
+      subnet_ids = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}", "${aws_default_subnet.c.id}"]
+    {% else %}
+      subnet_ids = ["{{ aws_subnet_id_a }}" , "{{ aws_subnet_id_b }}" , "{{ aws_subnet_id_c }}"]
+    {% endif %}
+
+    tags {
+        Name = "tf-rds-cluster-subnet-{{ project_name }}-{{ project_deployment_environment }}"
+    }
+
+}
+
+resource "aws_rds_cluster_instance" "this" {
+  count              = 2
+  identifier         = "tf-rds-{{ project_name }}-{{ project_deployment_environment }}-${count.index}"
+  cluster_identifier = "${aws_rds_cluster.default.id}"
+  instance_class     = "{{ db_instance_type }}"
+  db_subnet_group_name = "${aws_db_subnet_group.rds_cluster.name}"
+}
+
+resource "aws_rds_cluster" "default" {
+  cluster_identifier = "tf-cluster-rds-{{ project_name }}-{{ project_deployment_environment }}"
+  engine  = "{{ db_engine }}"
+  engine_version       = "{{ db_engine_version }}"
+  skip_final_snapshot = "true"
+
+  database_name      = "{{ db_name }}"
+  master_username    = "{{ db_username }}"
+  master_password    = "{{ db_password }}"
+
+  backup_retention_period  = "14"
+  preferred_backup_window  = "02:00-03:00"
+  preferred_maintenance_window = "wed:03:00-wed:04:00"
+
+  final_snapshot_identifier  = "tf-rds-{{ project_name }}-{{ project_deployment_environment }}-{{ db_engine }}"
+
+  availability_zones = ["${data.aws_availability_zones.available.names}"]
+  vpc_security_group_ids = ["${aws_security_group.rds_security_group.id}"]
+}
