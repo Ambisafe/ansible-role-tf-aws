@@ -57,6 +57,7 @@ resource "aws_rds_cluster_instance" "this" {
   count              = 2
   identifier         = "tf-rds-{{ project_name }}-{{ project_deployment_environment }}-${count.index}"
   cluster_identifier = "${aws_rds_cluster.default.id}"
+  engine  = "{{ db_engine }}"
   instance_class     = "{{ db_instance_type }}"
   db_subnet_group_name = "${aws_db_subnet_group.rds_cluster.name}"
 }
@@ -64,7 +65,6 @@ resource "aws_rds_cluster_instance" "this" {
 resource "aws_rds_cluster" "default" {
   cluster_identifier = "tf-cluster-rds-{{ project_name }}-{{ project_deployment_environment }}"
   engine  = "{{ db_engine }}"
-  engine_version       = "{{ db_engine_version }}"
   skip_final_snapshot = "true"
 
   database_name      = "{{ db_name }}"
