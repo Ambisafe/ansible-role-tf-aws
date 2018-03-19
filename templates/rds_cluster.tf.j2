@@ -54,7 +54,7 @@ resource "aws_db_subnet_group" "rds_cluster" {
 }
 
 resource "aws_rds_cluster_instance" "this" {
-  count              = 2
+  count              = 3
   identifier         = "tf-rds-{{ project_name }}-{{ project_deployment_environment }}-${count.index}"
   cluster_identifier = "${aws_rds_cluster.default.id}"
   engine  = "{{ db_engine }}"
@@ -77,6 +77,6 @@ resource "aws_rds_cluster" "default" {
 
   final_snapshot_identifier  = "tf-rds-{{ project_name }}-{{ project_deployment_environment }}-{{ db_engine }}"
 
-  availability_zones = ["${data.aws_availability_zones.available.names}"]
+  availability_zones = ["${data.aws_availability_zones.available.names[0]}", "${data.aws_availability_zones.available.names[1]}", "${data.aws_availability_zones.available.names[2]}"]
   vpc_security_group_ids = ["${aws_security_group.rds_security_group.id}"]
 }
