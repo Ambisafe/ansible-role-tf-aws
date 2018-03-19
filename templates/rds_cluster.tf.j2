@@ -59,7 +59,7 @@ resource "aws_rds_cluster_instance" "this" {
   cluster_identifier = "${aws_rds_cluster.default.id}"
   engine  = "{{ db_engine }}"
   instance_class     = "{{ db_instance_type }}"
-  db_subnet_group_name = "${aws_db_subnet_group.rds_cluster.name}"
+  #db_subnet_group_name = "${aws_db_subnet_group.rds_cluster.name}"
 }
 
 resource "aws_rds_cluster" "default" {
@@ -71,7 +71,7 @@ resource "aws_rds_cluster" "default" {
   master_username    = "{{ db_username }}"
   master_password    = "{{ db_password }}"
 
-  backup_retention_period  = "14"
+  backup_retention_period  = "1"
   preferred_backup_window  = "02:00-03:00"
   preferred_maintenance_window = "wed:03:00-wed:04:00"
 
