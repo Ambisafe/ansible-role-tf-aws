@@ -54,7 +54,7 @@ resource "aws_db_subnet_group" "rds_cluster" {
 }
 
 resource "aws_rds_cluster_instance" "this" {
-  count              = 3
+  count              = 2
   identifier         = "tf-rds-{{ project_name }}-{{ project_deployment_environment }}-${count.index}"
   cluster_identifier = "${aws_rds_cluster.default.id}"
   engine  = "{{ db_engine }}"
