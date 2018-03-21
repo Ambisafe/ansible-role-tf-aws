@@ -43,7 +43,7 @@ resource "aws_route53_record" "rds_reader" {
 {% endif %}
 
 resource "aws_route53_record" "this" {
-{% if project_zone_main != "yes" %}
+{% if project_zone_main != "true" %}
   count = 0
 {% endif %}
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
