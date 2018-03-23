@@ -30,24 +30,24 @@ resource "aws_default_subnet" "c" {
 
 ##### ecs #####
 
-{% include './templates/ecs.tf.j2' %}
+{% if project_ecs == 'true' %}
+  {% include './templates/ecs.tf.j2' %}
+{% endif %}
 
 ##### rds ######
 
-{% if project_zone_rds_cluster == 'true' %}
-  {% include './templates/rds_cluster.tf.j2' %}
-{% else %}
-  {% include './templates/rds.tf.j2' %}
+{% if project_rds == 'true' %}
+  {% include './templates/rds_main.tf.j2' %}
 {% endif %}
 
 ##### alb #####
-
-{% include './templates/alb.tf.j2' %}
-
+{% if project_alb == 'true' %}
+  {% include './templates/alb.tf.j2' %}
+{% endif %}
 ##### iam #####
-
-{% include './templates/iam.tf.j2' %}
-
+{% if project_iam == 'true' %}
+  {% include './templates/iam.tf.j2' %}
+{% endif %}
 ##### dns #####
 
 {% if project_zone_cloudflare == 'true' %}
@@ -57,11 +57,15 @@ resource "aws_default_subnet" "c" {
 {% endif %}
 
 ##### cloudfront #####
+{% if project_cloudfront_for_alb == 'true' %}
+  {% include './templates/cloudfront_for_alb.tf.j2' %}
+{% endif %}
 
-{% include './templates/cloudfront.tf.j2' %}
+{% if project_cloudfront_for_lambda == 'true' %}
+  {% include './templates/cloudfront_for_lambda.tf.j2' %}
+{% endif %}
 
 ##### redis #####
-
 {% if project_ecc == 'true' %}
   {% include './templates/ecc.tf.j2' %}
 {% endif %}
