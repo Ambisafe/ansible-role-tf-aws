@@ -7,6 +7,7 @@ provider "aws" {
     alias = "us-east-1"
 }
 
+data "aws_availability_zones" "available" {}
 
 {% if aws_vpc_default == 'true' %}
 resource "aws_default_vpc" "this" {
@@ -41,13 +42,17 @@ resource "aws_default_subnet" "c" {
 {% endif %}
 
 ##### alb #####
+
 {% if project_alb == 'true' %}
   {% include './templates/alb.tf.j2' %}
 {% endif %}
+
 ##### iam #####
+
 {% if project_iam == 'true' %}
   {% include './templates/iam.tf.j2' %}
 {% endif %}
+
 ##### dns #####
 
 {% if project_zone_cloudflare == 'true' %}
@@ -57,20 +62,23 @@ resource "aws_default_subnet" "c" {
 {% endif %}
 
 ##### cloudfront #####
+
 {% if project_cloudfront_for_alb == 'true' %}
   {% include './templates/cloudfront_for_alb.tf.j2' %}
 {% endif %}
 
 {% if project_cloudfront_for_lambda == 'true' %}
-  {% include './templates/cloudfront_for_lambda.tf.j2' %}
+  {% include './templates/cloudfront_for_s3.tf.j2' %}
 {% endif %}
 
 ##### redis #####
+
 {% if project_ecc == 'true' %}
   {% include './templates/ecc.tf.j2' %}
 {% endif %}
 
 ##### s3 ######
+
 {% if project_s3 == 'true' %}
   {% include './templates/s3.tf.j2' %}
 {% endif %}

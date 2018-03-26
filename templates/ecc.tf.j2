@@ -5,7 +5,7 @@ resource "aws_elasticache_replication_group" "this" {
   number_cache_clusters         = {{ ecc_num_cache_nodes }}
   port                          = {{ ecc_port }}
   parameter_group_name          = "{{ ecc_parameter_group_name }}"
-  availability_zones            = ["{{ aws_region }}a", "{{ aws_region }}b", "{{ aws_region }}c"]
+  availability_zones = ["${data.aws_availability_zones.available.names[0]}", "${data.aws_availability_zones.available.names[1]}", "${data.aws_availability_zones.available.names[2]}"]
   subnet_group_name = "${aws_elasticache_subnet_group.this.name}"
   automatic_failover_enabled    = false
   security_group_ids = ["${aws_security_group.this.id}", "${aws_security_group.redis.id}"]

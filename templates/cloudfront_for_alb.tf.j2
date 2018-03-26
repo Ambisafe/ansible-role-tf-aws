@@ -51,4 +51,5 @@ resource "aws_cloudfront_distribution" "this" {
   {% endif %}
     ssl_support_method = "sni-only"
   }
+  depends_on = ["aws_acm_certificate_validation.default"]
 }
