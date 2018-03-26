@@ -7,6 +7,7 @@ project_rds: 'true'
 project_iam: "true"
 project_cloudfront_for_alb: "true"
 project_cloudfront_for_lambda: "false"
+project_s3: "false"
 
 ecs_min_size: 0
 ecs_max_size: 1
