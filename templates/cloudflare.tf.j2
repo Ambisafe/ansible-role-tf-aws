@@ -4,7 +4,7 @@ provider "cloudflare" {
 }
 
 resource "cloudflare_record" "this" {
-{% if project_zone_main != "yes" %}
+{% if main_dns_record_create == "false" %}
   count = 0
 {% endif %}
   domain = "{{ route53_domain_name }}"

@@ -1,40 +1,10 @@
 resource "aws_s3_bucket" "website_bucket" {
+
   provider = "aws.{{ aws_region }}"
   bucket   = "{{ s3_bucket_name }}"
   policy  = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "PublicReadAccess",
-      "Principal": {
-        "AWS": "*"
-      },
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject"
-      ],
-      "Resource": "arn:aws:s3:::{{ s3_bucket_name }}/*",
-      "Condition": {
-        "StringEquals": {
-          "aws:UserAgent": "{{ s3_secret }}"
-        }
-      }
-    }
-  ]
-}
+{{ s3_bucket_policy }}
 EOF
-
-  website {
-    index_document = "index.html"
-    error_document = "404.html"
-    #routing_rules  = "${var.routing_rules}"
-  }
-
-  //  logging {
-  //    target_bucket = "${var.log_bucket}"
-  //    target_prefix = "${var.log_bucket_prefix}"
-  //  }
 
 }
 
@@ -44,85 +14,22 @@ resource "aws_iam_policy" "site_deployer_policy" {
   path        = "/"
   description = "Policy allowing to publish a new version of the website to the S3 bucket"
   policy      = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "s3:ListBucket"
-      ],
-      "Effect": "Allow",
-      "Resource": "arn:aws:s3:::{{ s3_bucket_name }}"
-    },
-    {
-      "Action": [
-        "s3:DeleteObject",
-        "s3:GetObject",
-        "s3:GetObjectAcl",
-        "s3:ListBucket",
-        "s3:PutObject",
-        "s3:PutObjectAcl"
-      ],
-      "Effect": "Allow",
-      "Resource": "arn:aws:s3:::{{ s3_bucket_name }}/*"
-    }
-  ]
-}
+{{ iam_user_policy }}
 EOF
 }
 
 resource "aws_iam_policy_attachment" "site-deployer-attach-user-policy" {
   provider   = "aws.{{ aws_region }}"
-  name       = "{{ s3_bucket_name }}-deployer-policy-attachment"
+  name       = "{{ s3_bucket_name }}-deployer-policy"
   users      = ["${aws_iam_user.deployer.name}"]
   policy_arn = "${aws_iam_policy.site_deployer_policy.arn}"
 }
 
 resource "aws_iam_user" "deployer" {
-  name = "deploy@{{ project_name }}.{{ route53_domain_name }}"
+  name = "deploy@{{ project_name }}.{{ project_deployment_environment }}"
   path = "/"
 }
 
 resource "aws_iam_access_key" "deployer" {
   user = "${aws_iam_user.deployer.name}"
-}
-
-resource "aws_iam_user_policy" "deployer" {
-  name = "tf-Access_Landing_ICO_User"
-  user = "${aws_iam_user.deployer.name}"
-
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": [
-                "cloudfront:ListDistributions",
-                "cloudfront:CreateInvalidation"
-            ],
-            "Resource": "*",
-            "Effect": "Allow"
-        },
-        {
-            "Action": [
-                "s3:ListAllMyBuckets",
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:PutObjectAcl"
-            ],
-            "Resource": [
-                "arn:aws:s3:::{{ s3_bucket_name }}/*"
-            ],
-            "Effect": "Allow"
-        },
-        {
-            "Action": [
-                "s3:ListAllMyBuckets"
-            ],
-            "Resource": "*",
-            "Effect": "Allow"
-        }
-    ]
-}
-EOF
 }
