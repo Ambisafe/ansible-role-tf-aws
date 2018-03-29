@@ -6,7 +6,7 @@
             "Effect": "Allow",
             "Principal": {
                 "AWS": [
-                    "{{ iam_user_arn }}"
+                    "${aws_iam_user.deployer.arn}"
                 ] 
             },
             "Action": [
@@ -22,7 +22,7 @@
             "Effect": "Allow",
             "Principal": {
                 "AWS": [
-                    "{{ user_arn }}"
+                    "${aws_iam_user.deployer.arn}"
                 ]
             },
             "Action": [
