@@ -17,10 +17,6 @@ resource "aws_cloudfront_distribution" "website_cdn" {
         "TLSv1"]
     }
 
-    custom_header {
-      name  = "User-Agent"
-      value = "{{ s3_secret }}"
-    }
   }
 
   default_root_object = "index.html"

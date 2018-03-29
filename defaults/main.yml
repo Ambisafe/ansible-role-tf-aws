@@ -22,8 +22,8 @@ project_cloudfront_for_lambda: "false"
 main_dns_record_create: "true"
 
 s3_bucket_name: "tf-s3-test"
-s3_bucket_policy: ""
-iam_user_policy: ""
+s3_bucket_policy_name: "test_iam_user_policy.json.j2"
+iam_user_policy_name: "test_s3_bucket_policy.json.j2"
 
 ecs_min_size: 0
 ecs_max_size: 1

@@ -3,7 +3,7 @@ resource "aws_s3_bucket" "website_bucket" {
   provider = "aws.{{ aws_region }}"
   bucket   = "{{ s3_bucket_name }}"
   policy  = <<EOF
-{{ s3_bucket_policy }}
+{{ lookup('template', s3_bucket_policy_name }}
 EOF
 
 }
@@ -14,7 +14,7 @@ resource "aws_iam_policy" "site_deployer_policy" {
   path        = "/"
   description = "Policy allowing to publish a new version of the website to the S3 bucket"
   policy      = <<EOF
-{{ iam_user_policy }}
+{{ lookup('template', iam_user_policy_name }}
 EOF
 }
 
