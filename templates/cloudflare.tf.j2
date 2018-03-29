@@ -27,8 +27,8 @@ resource "cloudflare_record" "this" {
   {% include './templates/cloudflare_rds.tf.j2' %}
 {% endif %}
 
-{% if project_ecc == 'true' %}
-  {% include './templates/cloudflare_ecc.tf.j2' %}
+{% if project_elasticache == 'true' %}
+  {% include './templates/cloudflare_elasticache.tf.j2' %}
 {% endif %}
 
 resource "cloudflare_record" "cert_default" {

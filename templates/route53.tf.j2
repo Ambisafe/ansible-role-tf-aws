@@ -7,8 +7,8 @@ data "aws_route53_zone" "selected" {
  {% include './templates/route53_rds.tf.j2' %}
 {% endif %}
 
-{% if project_ecc == 'true' %}
-  {% include './templates/route53_ecc.tf.j2' %}
+{% if project_elasticache == 'true' %}
+  {% include './templates/route53_elasticache.tf.j2' %}
 {% endif %}
 
 resource "aws_route53_record" "this" {
