@@ -47,38 +47,3 @@ resource "aws_default_subnet" "c" {
   {% include './templates/alb.tf.j2' %}
 {% endif %}
 
-##### iam #####
-
-{% if project_iam == 'true' %}
-  {% include './templates/iam.tf.j2' %}
-{% endif %}
-
-##### dns #####
-
-{% if project_zone_cloudflare == 'true' %}
-  {% include './templates/cloudflare.tf.j2' %}
-{% else %}
-  {% include './templates/route53.tf.j2' %}
-{% endif %}
-
-##### cloudfront #####
-
-{% if project_cloudfront_for_alb == 'true' %}
-  {% include './templates/cloudfront_for_alb.tf.j2' %}
-{% endif %}
-
-#{% if project_cloudfront_for_s3 == 'true' %}
-#  {% include './templates/cloudfront_for_s3.tf.j2' %}
-#{% endif %}
-
-##### redis #####
-
-#{% if project_elasticache == 'true' %}
-#  {% include './templates/elasticache.tf.j2' %}
-#{% endif %}
-
-##### s3 ######
-
-#{% if project_s3 == 'true' %}
-#  {% include './templates/s3.tf.j2' %}
-#{% endif %}
