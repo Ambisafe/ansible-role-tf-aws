@@ -45,7 +45,7 @@ EOF
 
 }
 
-{% include './templates/static_iam_user_policy.tf.j2' %}
+{% include './templates/aws_policies/static_iam_user_policy.tf.j2' %}
 
 resource "aws_iam_policy" "site_deployer_policy" {
   provider    = "aws.{{ aws_region }}"
