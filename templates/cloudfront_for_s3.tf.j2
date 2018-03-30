@@ -4,7 +4,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
   http_version = "http2"
 
   "origin" {
-    origin_id   = "origin-bucket-{{ project_deployment_environment }}-{{ project_name }}"
+    origin_id   = "s3-{{ s3_bucket_name }}"
     domain_name = "${aws_s3_bucket.website_bucket.website_endpoint}"
 
     custom_origin_config {
@@ -14,7 +14,8 @@ resource "aws_cloudfront_distribution" "website_cdn" {
       origin_ssl_protocols = [
         "TLSv1.2",
         "TLSv1.1",
-        "TLSv1"]
+        "TLSv1"
+      ]
     }
 
   }
@@ -45,7 +46,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     min_ttl          = "0"
     default_ttl      = "300"                                              //3600
     max_ttl          = "1200"                                             //86400
-    target_origin_id = "origin-bucket-{{ project_deployment_environment }}-{{ project_name }}"
+    target_origin_id = "s3-{{ s3_bucket_name }}"
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
@@ -67,7 +68,11 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     minimum_protocol_version = "TLSv1"
   }
 
-  aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"]
+  {% if project_deployment_environment == 'prod' or skip_env_domain_prefix == true %}
+    aliases = ["{{ project_name }}.{{ project_env_zone }}"]
+  {% else %}
+    aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"]
+  {% endif %}
 
   depends_on = ["aws_acm_certificate_validation.default"]
 
