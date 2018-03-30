@@ -79,6 +79,6 @@ resource "aws_default_subnet" "c" {
 
 ##### s3 ######
 
-{% if project_s3 == 'true' %}
-  {% include './templates/s3.tf.j2' %}
-{% endif %}
+# {% if project_s3 == 'true' %}
+#   {% include './templates/s3.tf.j2' %}
+# {% endif %}
