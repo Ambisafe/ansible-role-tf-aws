@@ -45,35 +45,14 @@ EOF
 
 }
 
+{% include './templates/static_iam_user_policy.tf.j2' %}
+
 resource "aws_iam_policy" "site_deployer_policy" {
   provider    = "aws.{{ aws_region }}"
   name        = "deployer.{{ project_name }}.{{ project_env_name }}"
   path        = "/"
   description = "Policy allowing to publish a new version of the website to the S3 bucket"
-  policy      = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-
-        {
-            "Effect": "Allow",
-            "Action": [
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:PutObjectAcl",
-            ],
-            "Resource": "arn:aws:s3:::{{ s3_bucket_name }}/*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "s3:ListAllMyBuckets"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-EOF
+  policy      = "${data.aws_iam_policy_document.user.json}"
 }
 
 resource "aws_iam_policy_attachment" "site-deployer-attach-user-policy" {

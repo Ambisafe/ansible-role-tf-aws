@@ -1,0 +1,41 @@
+data "aws_iam_policy_document" "user" {
+  statement {
+    sid = "cloudfront"
+
+    actions = [
+      "cloudfront:ListDistributions",
+      "cloudfront:CreateInvalidation"
+    ]
+
+    resources = [
+      "*"
+    ]
+  }
+
+  statement {
+    sid = "list_bucket"
+
+    actions = [
+      "s3:GetBucketLocation",
+      "s3:ListBucket"
+    ]
+
+    resources = [
+      "arn:aws:s3:::{{ s3_bucket_name }}"
+    ]
+  }
+
+  statement {
+    sid = "upload_to_bucket"
+
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:PutObjectAcl"
+    ]
+
+    resources = [
+      "arn:aws:s3:::{{ s3_bucket_name }}/*"
+    ]
+  }
+}
