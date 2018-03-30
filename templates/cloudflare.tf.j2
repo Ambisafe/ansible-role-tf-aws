@@ -7,11 +7,11 @@ resource "cloudflare_record" "this" {
 {% if main_dns_record_create == "false" %}
   count = 0
 {% endif %}
-  domain = "{{ route53_domain_name }}"
+  domain = "{{ project_domain_zone }}"
 {% if project_deployment_environment == 'prod' %}
-  name = "{{ project_name }}.{{ route53_domain_name }}"
+  name = "{{ project_name }}.{{ project_domain_zone }}"
 {% else %}
-  name = "{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"
+  name = "{{ project_deployment_environment }}.{{ project_name }}.{{ project_domain_zone }}"
 {% endif %}
 {% if project_cloudfront_for_alb == 'true' %}
   value  = "${aws_cloudfront_distribution.this.domain_name}"
@@ -32,7 +32,7 @@ resource "cloudflare_record" "this" {
 {% endif %}
 
 resource "cloudflare_record" "cert_default" {
-  domain = "{{ route53_domain_name }}"
+  domain = "{{ project_domain_zone }}"
   name = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_name}"
   type = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_type}"
   value = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_value}"
@@ -41,7 +41,7 @@ resource "cloudflare_record" "cert_default" {
 
 
 resource "cloudflare_record" "cert_alternative" {
-  domain = "{{ route53_domain_name }}"
+  domain = "{{ project_domain_zone }}"
   name = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_name}"
   type = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_type}"
   value = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_value}"
@@ -51,15 +51,15 @@ resource "cloudflare_record" "cert_alternative" {
 {% if aws_region != 'us-east-1' %}
 resource "aws_acm_certificate" "us-east-1" {
   provider = "aws.us-east-1"
-  domain_name = "{{ project_name }}.{{ route53_domain_name }}"
-  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+  domain_name = "{{ project_name }}.{{ project_domain_zone }}"
+  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ project_domain_zone }}"]
   validation_method = "DNS"
 }
 {% endif %}
 
 resource "aws_acm_certificate" "default" {
-  domain_name = "{{ project_name }}.{{ route53_domain_name }}"
-  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+  domain_name = "{{ project_name }}.{{ project_domain_zone }}"
+  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ project_domain_zone }}"]
   validation_method = "DNS"
 }
 

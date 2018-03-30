@@ -15,6 +15,7 @@ project_rds: "false"
 project_rds_cluster: "false"
 project_elasticache: "false"
 
+project_domain_zone: "example.com"
 project_zone_cloudflare: "false"
 project_cloudfront_for_alb: "false"
 project_cloudfront_for_lambda: "false"

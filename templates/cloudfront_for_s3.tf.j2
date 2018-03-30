@@ -67,7 +67,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     minimum_protocol_version = "TLSv1"
   }
 
-  aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+  aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"]
 
   depends_on = ["aws_acm_certificate_validation.default"]
 
