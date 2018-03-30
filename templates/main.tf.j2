@@ -61,20 +61,3 @@ resource "aws_default_subnet" "c" {
   {% include './templates/route53.tf.j2' %}
 {% endif %}
 
-##### cloudfront #####
-
-{% if project_cloudfront_for_alb == 'true' %}
-  {% include './templates/cloudfront_for_alb.tf.j2' %}
-{% endif %}
-
-#{% if project_cloudfront_for_s3 == 'true' %}
-#  {% include './templates/cloudfront_for_s3.tf.j2' %}
-#{% endif %}
-
-
-
-##### s3 ######
-
-#{% if project_s3 == 'true' %}
-#  {% include './templates/s3.tf.j2' %}
-#{% endif %}
