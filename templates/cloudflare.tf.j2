@@ -16,7 +16,7 @@ resource "cloudflare_record" "this" {
 {% if project_cloudfront_for_alb == 'true' %}
   value  = "${aws_cloudfront_distribution.this.domain_name}"
 {% endif %}
-{% if project_cloudfront_for_lambda == 'true' %}
+{% if project_cloudfront_for_s3 == 'true' %}
    value = "${aws_cloudfront_distribution.website_cdn.domain_name}"
 {% endif %}
   type   = "CNAME"
