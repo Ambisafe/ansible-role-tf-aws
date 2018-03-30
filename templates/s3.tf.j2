@@ -3,7 +3,44 @@ resource "aws_s3_bucket" "website_bucket" {
   provider = "aws.{{ aws_region }}"
   bucket   = "{{ s3_bucket_name }}"
   policy  = <<EOF
-{{ lookup('template', s3_bucket_policy_name }}
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PrivateListGetBucket",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": [
+                    "${aws_iam_user.deployer.arn}"
+                ] 
+            },
+            "Action": [
+                "s3:GetBucketLocation",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::{{ s3_bucket_name }}"
+            ]
+        },
+        {
+            "Sid": "PrivateGetPutObject",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": [
+                    "${aws_iam_user.deployer.arn}"
+                ]
+            },
+            "Action": [
+                "s3:Get*",
+                "s3:Put*",
+                "s3:Delete*"
+            ],
+            "Resource": [
+                "arn:aws:s3:::{{ s3_bucket_name }}/*"
+            ]
+        }
+    ]
+}
 EOF
 
 }
@@ -14,7 +51,47 @@ resource "aws_iam_policy" "site_deployer_policy" {
   path        = "/"
   description = "Policy allowing to publish a new version of the website to the S3 bucket"
   policy      = <<EOF
-{{ lookup('template', iam_user_policy_name }}
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "cloudfront:ListDistributions",
+                "cloudfront:CreateInvalidation"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetBucketLocation",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::{{ s3_bucket_name }}"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:PutObjectAcl",
+            ],
+            "Resource": [
+                "arn:aws:s3:::{{ s3_bucket_name }}/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListAllMyBuckets"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
 EOF
 }
 
