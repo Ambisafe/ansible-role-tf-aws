@@ -1,6 +1,6 @@
 
 data "aws_route53_zone" "selected" {
-  name = "{{ project_env_zone }}."
+  name = "{{ project_env_zone }}"
 }
 
 {% if project_rds == 'true' %}

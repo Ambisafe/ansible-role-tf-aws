@@ -55,7 +55,7 @@ resource "aws_default_subnet" "c" {
 
 ##### dns #####
 
-{% if project_zone_cloudflare == 'true' %}
+{% if project_zone_cloudflare == true %}
   {% include './templates/cloudflare.tf.j2' %}
 {% else %}
   {% include './templates/route53.tf.j2' %}
