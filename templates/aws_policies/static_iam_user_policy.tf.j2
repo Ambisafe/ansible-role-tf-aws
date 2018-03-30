@@ -1,6 +1,6 @@
 data "aws_iam_policy_document" "user" {
   statement {
-    sid = "cloudfront"
+    sid = "1"
 
     actions = [
       "cloudfront:ListDistributions",
@@ -13,7 +13,7 @@ data "aws_iam_policy_document" "user" {
   }
 
   statement {
-    sid = "list_bucket"
+    sid = "2"
 
     actions = [
       "s3:GetBucketLocation",
@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "user" {
   }
 
   statement {
-    sid = "upload_to_bucket"
+    sid = "3"
 
     actions = [
       "s3:GetObject",
