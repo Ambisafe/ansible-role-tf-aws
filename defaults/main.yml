@@ -14,11 +14,10 @@ project_iam: "false"
 project_rds: "false"
 project_rds_cluster: "false"
 project_elasticache: "false"
-
 project_domain_zone: "example.com"
 project_zone_cloudflare: "false"
 project_cloudfront_for_alb: "false"
-project_cloudfront_for_lambda: "false"
+project_cloudfront_for_s3: "false"
 
 main_dns_record_create: "true"
 skip_env_domain_prefix: false

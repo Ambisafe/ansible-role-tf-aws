@@ -67,7 +67,7 @@ resource "aws_default_subnet" "c" {
   {% include './templates/cloudfront_for_alb.tf.j2' %}
 {% endif %}
 
-#{% if project_cloudfront_for_lambda == 'true' %}
+#{% if project_cloudfront_for_s3 == 'true' %}
 #  {% include './templates/cloudfront_for_s3.tf.j2' %}
 #{% endif %}
 
