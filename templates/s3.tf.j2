@@ -84,7 +84,7 @@ resource "aws_iam_policy_attachment" "site-deployer-attach-user-policy" {
 }
 
 resource "aws_iam_user" "deployer" {
-  name = "deploy@{{ project_name }}.{{ project_deployment_environment }}"
+  name = "deploy@{{ project_type }}.{{ project_name }}.{{ project_deployment_environment }}"
   path = "/"
 }
 

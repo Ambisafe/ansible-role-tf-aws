@@ -7,6 +7,10 @@ aws_subnet_id_a : ""
 aws_subnet_id_b : ""
 aws_subnet_id_c : ""
 
+project_type: "project"
+project_name: "name"
+project_deployment_environment: "env"
+
 project_s3: "false"
 project_ecs: "false"
 project_alb: "false"
