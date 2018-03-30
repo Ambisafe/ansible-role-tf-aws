@@ -8,7 +8,7 @@ resource "cloudflare_record" "this" {
   count = 0
 {% endif %}
   domain = "{{ project_domain_zone }}"
-{% if project_deployment_environment == 'prod' %}
+{% if project_deployment_environment == 'prod' or skip_env_domain_prefix == true %}
   name = "{{ project_name }}.{{ project_domain_zone }}"
 {% else %}
   name = "{{ project_deployment_environment }}.{{ project_name }}.{{ project_domain_zone }}"
