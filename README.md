@@ -43,7 +43,7 @@ playbook.yml
 
     terraform_data_dir: "/tmp/.tf"
 
-    project_domain_zone: "google.com"
+    project_env_zone: "google.com"
 
   roles:
     - { role: terraform-aws }
