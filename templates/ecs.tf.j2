@@ -83,21 +83,14 @@ resource "aws_security_group" "this" {
     from_port = 22
     to_port = 22
     protocol = "tcp"
-    cidr_blocks = [ "0.0.0.0/0" ]
+    cidr_blocks = [ "185.41.248.158/32", "13.229.188.86/32"]
   }
 
   ingress {
       from_port = 443
       to_port = 443
       protocol = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-      from_port = 80
-      to_port = 80
-      protocol = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+      security_groups = ["${aws_security_group.alb.id}"]
   }
 
   egress {
@@ -111,7 +104,6 @@ resource "aws_security_group" "this" {
     Name = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
   }
 }
-
 
 # Make this a var that an get passed in?
 resource "aws_ecs_cluster" "cluster" {
