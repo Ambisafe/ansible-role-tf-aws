@@ -2,6 +2,11 @@ resource "aws_s3_bucket" "website_bucket" {
 
   provider = "aws.{{ aws_region }}"
   bucket   = "{{ s3_bucket_name }}"
+
+  website {
+    index_document = "index.html"
+  }
+  
   policy  = <<EOF
 {
     "Version": "2012-10-17",

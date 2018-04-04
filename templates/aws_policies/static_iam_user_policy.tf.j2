@@ -2,6 +2,8 @@ data "aws_iam_policy_document" "user" {
   statement {
     sid = "1"
 
+    effect = "Allow"
+    
     actions = [
       "cloudfront:ListDistributions",
       "cloudfront:CreateInvalidation"
@@ -14,6 +16,8 @@ data "aws_iam_policy_document" "user" {
 
   statement {
     sid = "2"
+
+    effect = "Allow"
 
     actions = [
       "s3:GetBucketLocation",
@@ -28,6 +32,8 @@ data "aws_iam_policy_document" "user" {
   statement {
     sid = "3"
 
+    effect = "Allow"
+
     actions = [
       "s3:GetObject",
       "s3:PutObject",
@@ -38,4 +44,19 @@ data "aws_iam_policy_document" "user" {
       "arn:aws:s3:::{{ s3_bucket_name }}/*"
     ]
   }
+
+  statement {
+    sid = "4"
+
+    effect = "Allow"
+
+    actions = [
+      sts:AssumeRole
+    ]
+
+    principals = [
+      "Service": "lambda.amazonaws.com"
+    ]
+  }
+
 }
