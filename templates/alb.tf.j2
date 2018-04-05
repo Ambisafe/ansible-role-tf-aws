@@ -21,12 +21,14 @@ resource "aws_security_group" "alb" {
   vpc_id = "{{ aws_vpc_id }}"
 {% endif %}
 
+{% for ingress in alb_sg_ingress %}
   ingress {
-      from_port = 443
-      to_port = 443
-      protocol = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+    from_port = {{ ingress.from_port }}
+    to_port = {{ ingress.to_port }}
+    protocol = "{{ ingress.protocol }}"
+    cidr_blocks = {{ ingress.cidr_blocks | replace('\'', '\"') | replace('u', '') }}
   }
+{% endfor %}
 
   egress {
     from_port   = 0
