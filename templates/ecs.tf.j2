@@ -79,12 +79,14 @@ resource "aws_security_group" "this" {
   vpc_id = "{{ aws_vpc_id }}"
 {% endif %}
 
+{% for ingress in ecs_sg_ingress %}
   ingress {
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks = {{ ecs_sg_cidr_blocks | replace('\'', '\"') | replace('u', '') }}
+    from_port = {{ ingress.from_port }}
+    to_port = {{ ingress.to_port }}
+    protocol = "{{ ingress.protocol }}"
+    cidr_blocks = {{ ingress.cidr_blocks | replace('\'', '\"') | replace('u', '') }}
   }
+{% endfor %}
 
   ingress {
       from_port = 80
