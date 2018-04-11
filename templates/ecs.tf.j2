@@ -70,43 +70,6 @@ resource "aws_autoscaling_group" "ecs" {
   }
 }
 
-resource "aws_security_group" "this" {
-  name        = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
-  description = "Container Instance Allowed Ports"
-{% if aws_vpc_default == 'true' %}
-  vpc_id = "${aws_default_vpc.this.id}"
-{% else %}
-  vpc_id = "{{ aws_vpc_id }}"
-{% endif %}
-
-{% for ingress in ecs_sg_ingress %}
-  ingress {
-    from_port = {{ ingress.from_port }}
-    to_port = {{ ingress.to_port }}
-    protocol = "{{ ingress.protocol }}"
-    cidr_blocks = {{ ingress.cidr_blocks | replace('\'', '\"') | replace('u', '') }}
-  }
-{% endfor %}
-
-  ingress {
-      from_port = 80
-      to_port = 80
-      protocol = "tcp"
-      security_groups = ["${aws_security_group.alb.id}"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags {
-    Name = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
-  }
-}
-
 # Make this a var that an get passed in?
 resource "aws_ecs_cluster" "cluster" {
   name = "tf-ecs-{{ project_name }}-{{ project_deployment_environment }}-cluster"

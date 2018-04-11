@@ -12,35 +12,6 @@ resource "aws_alb" "this" {
   internal = false
 }
 
-resource "aws_security_group" "alb" {
-  name        = "tf-alb-sg-{{ project_name }}-{{ project_deployment_environment }}"
-
-{% if aws_vpc_default == 'true' %}
-  vpc_id = "${aws_default_vpc.this.id}"
-{% else %}
-  vpc_id = "{{ aws_vpc_id }}"
-{% endif %}
-
-{% for ingress in alb_sg_ingress %}
-  ingress {
-    from_port = {{ ingress.from_port }}
-    to_port = {{ ingress.to_port }}
-    protocol = "{{ ingress.protocol }}"
-    cidr_blocks = {{ ingress.cidr_blocks | replace('\'', '\"') | replace('u', '') }}
-  }
-{% endfor %}
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags {
-    Name = "tf-alb-sg-{{ project_name }}-{{ project_deployment_environment }}"
-  }
-}
 
 resource "aws_alb_listener" "default" {
   load_balancer_arn = "${aws_alb.this.arn}"
