@@ -60,7 +60,7 @@ data "aws_availability_zones" "available" {}
   }
   {% endif %}
 
-  {% include './templates/alb_sg.tf.j2' %}
+  {% include './templates/ecs_sg.tf.j2' %}
 {% endif %}
 
 ##### rds ######
@@ -91,6 +91,7 @@ data "aws_availability_zones" "available" {}
 
 {% if project_zone_cloudflare == true %}
   {% include './templates/cloudflare.tf.j2' %}
+
 {% if project_zone_route53 == true %}
   {% include './templates/route53.tf.j2' %}
 {% endif %}
