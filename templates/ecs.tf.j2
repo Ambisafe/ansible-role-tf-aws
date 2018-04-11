@@ -79,25 +79,20 @@ resource "aws_security_group" "this" {
   vpc_id = "{{ aws_vpc_id }}"
 {% endif %}
 
+{% for ingress in ecs_sg_ingress %}
   ingress {
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks = [ "0.0.0.0/0" ]
+    from_port = {{ ingress.from_port }}
+    to_port = {{ ingress.to_port }}
+    protocol = "{{ ingress.protocol }}"
+    cidr_blocks = {{ ingress.cidr_blocks | replace('\'', '\"') | replace('u', '') }}
   }
-
-  ingress {
-      from_port = 443
-      to_port = 443
-      protocol = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-  }
+{% endfor %}
 
   ingress {
       from_port = 80
       to_port = 80
       protocol = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+      security_groups = ["${aws_security_group.alb.id}"]
   }
 
   egress {
@@ -111,7 +106,6 @@ resource "aws_security_group" "this" {
     Name = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
   }
 }
-
 
 # Make this a var that an get passed in?
 resource "aws_ecs_cluster" "cluster" {
