@@ -9,10 +9,9 @@ provider "aws" {
 
 ##### ecs #####
 
-{% if project_ecs == 'true' %}
   data "aws_availability_zones" "available" {}
 
-  {% if aws_vpc_default == 'true' %}
+{% if aws_vpc_default == 'true' %}
   resource "aws_default_vpc" "this" {
       tags {
           Name = "Default VPC"
@@ -30,36 +29,14 @@ provider "aws" {
   resource "aws_default_subnet" "c" {
     availability_zone = "{{ aws_region }}c"
   }
-  {% endif %}
+{% endif %}
 
+{% if project_ecs == 'true' %}
   {% include './templates/ecs.tf.j2' %}
   {% include './templates/ecs_sg.tf.j2' %}
 {% endif %}
 
 {% if project_ecs_sg_only == 'true' %}
-
-data "aws_availability_zones" "available" {}
-
-  {% if aws_vpc_default == 'true' %}
-  resource "aws_default_vpc" "this" {
-      tags {
-          Name = "Default VPC"
-      }
-  }
-
-  resource "aws_default_subnet" "a" {
-    availability_zone = "{{ aws_region }}a"
-  }
-
-  resource "aws_default_subnet" "b" {
-    availability_zone = "{{ aws_region }}b"
-  }
-
-  resource "aws_default_subnet" "c" {
-    availability_zone = "{{ aws_region }}c"
-  }
-  {% endif %}
-
   {% include './templates/ecs_sg.tf.j2' %}
 {% endif %}
 
