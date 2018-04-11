@@ -91,7 +91,7 @@ data "aws_availability_zones" "available" {}
 
 {% if project_zone_cloudflare == true %}
   {% include './templates/cloudflare.tf.j2' %}
-{% else %}
+{% if project_zone_route53 == true %}
   {% include './templates/route53.tf.j2' %}
 {% endif %}
 
