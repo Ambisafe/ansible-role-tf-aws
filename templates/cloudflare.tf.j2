@@ -4,19 +4,19 @@ provider "cloudflare" {
 }
 
 resource "cloudflare_record" "this" {
-{% if project_zone_main != "yes" %}
+{% if main_dns_record_create == "false" %}
   count = 0
 {% endif %}
-  domain = "{{ route53_domain_name }}"
-{% if project_deployment_environment == 'prod' %}
-  name = "{{ project_name }}.{{ route53_domain_name }}"
+  domain = "{{ project_env_zone }}"
+{% if project_deployment_environment == 'prod' or skip_env_domain_prefix == true %}
+  name = "{{ project_name }}.{{ project_env_zone }}"
 {% else %}
-  name = "{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"
+  name = "{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"
 {% endif %}
 {% if project_cloudfront_for_alb == 'true' %}
   value  = "${aws_cloudfront_distribution.this.domain_name}"
 {% endif %}
-{% if project_cloudfront_for_lambda == 'true' %}
+{% if project_cloudfront_for_s3 == 'true' %}
    value = "${aws_cloudfront_distribution.website_cdn.domain_name}"
 {% endif %}
   type   = "CNAME"
@@ -27,12 +27,12 @@ resource "cloudflare_record" "this" {
   {% include './templates/cloudflare_rds.tf.j2' %}
 {% endif %}
 
-{% if project_ecc == 'true' %}
-  {% include './templates/cloudflare_ecc.tf.j2' %}
+{% if project_elasticache == 'true' %}
+  {% include './templates/cloudflare_elasticache.tf.j2' %}
 {% endif %}
 
 resource "cloudflare_record" "cert_default" {
-  domain = "{{ route53_domain_name }}"
+  domain = "{{ project_env_zone }}"
   name = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_name}"
   type = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_type}"
   value = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_value}"
@@ -40,30 +40,30 @@ resource "cloudflare_record" "cert_default" {
 }
 
 
-resource "cloudflare_record" "cert_alternative" {
-  domain = "{{ route53_domain_name }}"
-  name = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_name}"
-  type = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_type}"
-  value = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_value}"
-  ttl = 300
-}
+# resource "cloudflare_record" "cert_alternative" {
+#  domain = "{{ project_env_zone }}"
+#  name = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_name}"
+#  type = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_type}"
+#  value = "${aws_acm_certificate.default.domain_validation_options.1.resource_record_value}"
+#  ttl = 300
+#}
 
 {% if aws_region != 'us-east-1' %}
 resource "aws_acm_certificate" "us-east-1" {
   provider = "aws.us-east-1"
-  domain_name = "{{ project_name }}.{{ route53_domain_name }}"
-  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+  domain_name = "{{ project_name }}.{{ project_env_zone }}"
+  subject_alternative_names = ["*.{{ project_name }}.{{ project_env_zone }}"]
   validation_method = "DNS"
 }
 {% endif %}
 
 resource "aws_acm_certificate" "default" {
-  domain_name = "{{ project_name }}.{{ route53_domain_name }}"
-  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+  domain_name = "{{ project_name }}.{{ project_env_zone }}"
+  subject_alternative_names = ["*.{{ project_name }}.{{ project_env_zone }}"]
   validation_method = "DNS"
 }
 
 resource "aws_acm_certificate_validation" "default" {
   certificate_arn = "${aws_acm_certificate.default.arn}"
-  validation_record_fqdns = ["${cloudflare_record.cert_default.name}", "${cloudflare_record.cert_alternative.name}"]
+  validation_record_fqdns = ["${cloudflare_record.cert_default.name}"]
 }

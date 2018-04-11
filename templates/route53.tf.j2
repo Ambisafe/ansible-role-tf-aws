@@ -1,18 +1,18 @@
 
 data "aws_route53_zone" "selected" {
-  name = "{{ route53_domain_name }}."
+  name = "{{ project_env_zone }}"
 }
 
 {% if project_rds == 'true' %}
  {% include './templates/route53_rds.tf.j2' %}
 {% endif %}
 
-{% if project_ecc == 'true' %}
-  {% include './templates/route53_ecc.tf.j2' %}
+{% if project_elasticache == 'true' %}
+  {% include './templates/route53_elasticache.tf.j2' %}
 {% endif %}
 
 resource "aws_route53_record" "this" {
-{% if project_zone_main != "true" %}
+{% if main_dns_record_create == "false" %}
   count = 0
 {% endif %}
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
@@ -27,7 +27,7 @@ resource "aws_route53_record" "this" {
     name = "${aws_cloudfront_distribution.this.domain_name}"
     zone_id = "${aws_cloudfront_distribution.this.hosted_zone_id}"
 {% endif %}
-{% if project_cloudfront_for_lambda == 'true' %}
+{% if project_cloudfront_for_s3 == 'true' %}
     name = "${aws_cloudfront_distribution.website_cdn.domain_name}"
     zone_id = "${aws_cloudfront_distribution.website_cdn.hosted_zone_id}"
 {% endif %}
@@ -55,15 +55,15 @@ resource "aws_route53_record" "cert_alternative" {
 {% if aws_region != 'us-east-1' %}
 resource "aws_acm_certificate" "us-east-1" {
   provider = "aws.us-east-1"
-  domain_name = "{{ project_name }}.{{ route53_domain_name }}"
-  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+  domain_name = "{{ project_name }}.{{ project_env_zone }}"
+  subject_alternative_names = ["*.{{ project_name }}.{{ project_env_zone }}"]
   validation_method = "DNS"
 }
 {% endif %}
 
 resource "aws_acm_certificate" "default" {
-  domain_name = "{{ project_name }}.{{ route53_domain_name }}"
-  subject_alternative_names = ["{{ project_deployment_environment }}.{{ project_name }}.{{ route53_domain_name }}"]
+  domain_name = "{{ project_name }}.{{ project_env_zone }}"
+  subject_alternative_names = ["*.{{ project_name }}.{{ project_env_zone }}"]
   validation_method = "DNS"
 }
 

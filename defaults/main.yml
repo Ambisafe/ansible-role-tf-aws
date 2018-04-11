@@ -1,30 +1,52 @@
 ---
+organization_name: "default" # should be redefined from AWX
+
 aws_vpc_default: "true"
-project_zone_rds_cluster: 'false'
-project_ecs: "true"
-project_alb: "true"
-project_rds: 'true'
-project_iam: "true"
-project_cloudfront_for_alb: "true"
-project_cloudfront_for_lambda: "false"
+aws_vpc_id: ""
+aws_subnet_id_a : ""
+aws_subnet_id_b : ""
+aws_subnet_id_c : ""
+
+project_type: "project"
+project_name: "name"
+project_deployment_environment: "env"
+
 project_s3: "false"
+project_ecs: "false"
+project_alb: "false"
+project_iam: "false"
+project_rds: "false"
+project_rds_cluster: "false"
+project_elasticache: "false"
+project_env_zone: "example.com"
+project_zone_cloudflare: "false"
+project_cloudfront_for_alb: "false"
+project_cloudfront_for_s3: "false"
+
+main_dns_record_create: "true"
+skip_env_domain_prefix: false
+
+s3_bucket_name: "tf-s3-test"
+s3_bucket_policy_name: "test_iam_user_policy.json.j2"
+iam_user_policy_name: "test_s3_bucket_policy.json.j2"
 
 ecs_min_size: 0
 ecs_max_size: 1
 ecs_desired_capacity: 1
 ecs_instance_type: "t2.micro"
 ecs_block_device_size: 22
+ecs_nginx_conf_b64: ""
 
 db_instance_type: "db.t2.micro"
 db_engine: "mysql"
 db_engine_version: "5.6.37"
 db_allocated_storage_size: 10
 
-ecc_engine: "redis"
-ecc_node_type: "cache.t2.small"
-ecc_port: 6379
-ecc_num_cache_nodes: 1
-ecc_parameter_group_name: "default.redis3.2"
+elasticache_engine: "redis"
+elasticache_node_type: "cache.t2.small"
+elasticacheport: 6379
+elasticache_num_cache_nodes: 1
+elasticache_parameter_group_name: "default.redis3.2"
 
 db_skip_final_snapshot: "true"
 
