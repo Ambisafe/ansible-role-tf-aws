@@ -92,6 +92,6 @@ data "aws_availability_zones" "available" {}
 
 ##### s3 ######
 
-{% if project_s3 == 'true' %}
+{% if project_s3 == true %}
   {% include './templates/s3.tf.j2' %}
 {% endif %}
