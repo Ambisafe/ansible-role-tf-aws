@@ -13,21 +13,21 @@ resource "cloudflare_record" "this" {
 {% else %}
   name = "{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"
 {% endif %}
-{% if project_cloudfront_for_alb == 'true' %}
+{% if project_cloudfront_for_alb == true %}
   value  = "${aws_cloudfront_distribution.this.domain_name}"
 {% endif %}
-{% if project_cloudfront_for_s3 == 'true' %}
+{% if project_cloudfront_for_s3 == true %}
    value = "${aws_cloudfront_distribution.website_cdn.domain_name}"
 {% endif %}
   type   = "CNAME"
   ttl    = 300
 }
 
-{% if project_rds == 'true' %}
+{% if project_rds == true %}
   {% include './templates/cloudflare_rds.tf.j2' %}
 {% endif %}
 
-{% if project_elasticache == 'true' %}
+{% if project_elasticache == true %}
   {% include './templates/cloudflare_elasticache.tf.j2' %}
 {% endif %}
 

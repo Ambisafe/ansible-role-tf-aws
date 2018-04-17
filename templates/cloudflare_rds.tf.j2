@@ -7,7 +7,7 @@ resource "cloudflare_record" "rds" {
   name = "rds.{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"
 {% endif %}
 
-{% if project_zone_rds_cluster == 'true' %}
+{% if project_zone_rds_cluster == true %}
   value = "${aws_rds_cluster.default.endpoint}"
 {% else %}
   value = "${aws_db_instance.default.address}"
@@ -17,7 +17,7 @@ resource "cloudflare_record" "rds" {
   ttl = 300
 }
 
-{% if project_zone_rds_cluster == 'true' %}
+{% if project_zone_rds_cluster == true %}
 resource "cloudflare_record" "rds_reader" {
   domain = "{{ project_env_zone }}"
 {% if project_deployment_environment == 'prod' %}

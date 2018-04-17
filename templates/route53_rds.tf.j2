@@ -9,7 +9,7 @@ resource "aws_route53_record" "rds" {
 
   ttl = 300
 
-{% if project_zone_rds_cluster == 'true' %}
+{% if project_zone_rds_cluster == true %}
   records = ["${aws_rds_cluster.default.endpoint}"]
 {% else %}
   records = ["${aws_db_instance.default.address}"]
@@ -17,7 +17,7 @@ resource "aws_route53_record" "rds" {
 
 }
 
-{% if project_zone_rds_cluster == 'true' %}
+{% if project_zone_rds_cluster == true %}
 
 resource "aws_route53_record" "rds_reader" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"

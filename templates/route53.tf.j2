@@ -3,11 +3,11 @@ data "aws_route53_zone" "selected" {
   name = "{{ project_env_zone }}"
 }
 
-{% if project_rds == 'true' %}
+{% if project_rds == true %}
  {% include './templates/route53_rds.tf.j2' %}
 {% endif %}
 
-{% if project_elasticache == 'true' %}
+{% if project_elasticache == true %}
   {% include './templates/route53_elasticache.tf.j2' %}
 {% endif %}
 
@@ -23,11 +23,11 @@ resource "aws_route53_record" "this" {
 {% endif %}
   type = "A"
   alias {
-{% if project_cloudfront_for_alb == 'true' %}
+{% if project_cloudfront_for_alb == true %}
     name = "${aws_cloudfront_distribution.this.domain_name}"
     zone_id = "${aws_cloudfront_distribution.this.hosted_zone_id}"
 {% endif %}
-{% if project_cloudfront_for_s3 == 'true' %}
+{% if project_cloudfront_for_s3 == true %}
     name = "${aws_cloudfront_distribution.website_cdn.domain_name}"
     zone_id = "${aws_cloudfront_distribution.website_cdn.hosted_zone_id}"
 {% endif %}

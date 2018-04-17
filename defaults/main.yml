@@ -1,7 +1,7 @@
 ---
 organization_name: "default" # should be redefined from AWX
 
-aws_vpc_default: "true"
+aws_vpc_default: true
 aws_vpc_id: ""
 aws_subnet_id_a : ""
 aws_subnet_id_b : ""
@@ -11,22 +11,22 @@ project_type: "project"
 project_name: "name"
 project_deployment_environment: "env"
 
-project_s3: "false"
-project_ecs: "false"
-project_alb: "false"
-project_iam: "false"
-project_rds: "false"
-project_rds_cluster: "false"
-project_elasticache: "false"
+project_s3: false
+project_ecs: false
+project_alb: false
+project_iam: false
+project_rds: false
+project_rds_cluster: false
+project_elasticache: false
 project_env_zone: "example.com"
-project_zone_cloudflare: "false"
-project_cloudfront_for_alb: "false"
-project_cloudfront_for_s3: "false"
-project_ecs_sg_only: "false"
-project_alb_sg_only: "false"
-project_zone_route53: "false"
+project_zone_cloudflare: false
+project_cloudfront_for_alb: false
+project_cloudfront_for_s3: false
+project_ecs_sg_only: false
+project_alb_sg_only: false
+project_zone_route53: false
 
-main_dns_record_create: "true"
+main_dns_record_create: true
 skip_env_domain_prefix: false
 
 s3_bucket_name: "tf-s3-test"
@@ -51,7 +51,7 @@ elasticacheport: 6379
 elasticache_num_cache_nodes: 1
 elasticache_parameter_group_name: "default.redis3.2"
 
-db_skip_final_snapshot: "true"
+db_skip_final_snapshot: true
 
 terraform_dir: "/opt/terraform"
 terraform_arg: ""

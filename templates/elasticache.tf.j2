@@ -15,7 +15,7 @@ resource "aws_security_group" "redis" {
   name        = "tf-elasticache-sg-redis-{{ project_name }}-{{ project_deployment_environment }}"
   description = "{{ project_name | title }} Elasticache {{ project_deployment_environment | title }}"
 
-{% if aws_vpc_default == 'true' %}
+{% if aws_vpc_default == true %}
   vpc_id = "${aws_default_vpc.this.id}"
 {% else %}
   vpc_id = "{{ aws_vpc_id }}"
@@ -42,7 +42,7 @@ resource "aws_security_group" "redis" {
 
 resource "aws_elasticache_subnet_group" "this" {
   name       = "tf-elasticache-subnet-{{ project_name }}-{{ project_deployment_environment }}"
-{% if aws_vpc_default == 'true' %}
+{% if aws_vpc_default == true %}
   subnet_ids = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}", "${aws_default_subnet.c.id}"]
 {% else %}
   subnet_ids = ["{{ aws_subnet_id_a }}" , "{{ aws_subnet_id_b }}" , "{{ aws_subnet_id_c }}"]

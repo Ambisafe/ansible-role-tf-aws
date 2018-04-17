@@ -11,7 +11,7 @@ provider "aws" {
 
 data "aws_availability_zones" "available" {}
 
-{% if aws_vpc_default == 'true' %}
+{% if aws_vpc_default == true %}
   resource "aws_default_vpc" "this" {
       tags {
           Name = "Default VPC"
@@ -31,36 +31,36 @@ data "aws_availability_zones" "available" {}
   }
 {% endif %}
 
-{% if project_ecs == 'true' %}
+{% if project_ecs == true %}
   {% include './templates/ecs.tf.j2' %}
   {% include './templates/ecs_sg.tf.j2' %}
 {% endif %}
 
-{% if project_ecs_sg_only == 'true' %}
+{% if project_ecs_sg_only == true %}
   {% include './templates/ecs_sg.tf.j2' %}
 {% endif %}
 
 ##### rds ######
 
-{% if project_rds == 'true' %}
+{% if project_rds == true %}
   {% include './templates/rds_main.tf.j2' %}
 {% endif %}
 
 ##### alb #####
 
-{% if project_alb == 'true' %}
+{% if project_alb == true %}
   {% include './templates/alb.tf.j2' %}
   {% include './templates/alb_sg.tf.j2' %}
 {% endif %}
 
-{% if project_alb_sg_only == 'true' %}
+{% if project_alb_sg_only == true %}
   {% include './templates/alb_sg.tf.j2' %}
 {% endif %}
 
 
 ##### iam #####
 
-{% if project_iam == 'true' %}
+{% if project_iam == true %}
   {% include './templates/iam.tf.j2' %}
 {% endif %}
 
@@ -76,17 +76,17 @@ data "aws_availability_zones" "available" {}
 
 ##### cloudfront #####
 
-{% if project_cloudfront_for_alb == 'true' %}
+{% if project_cloudfront_for_alb == true %}
   {% include './templates/cloudfront_for_alb.tf.j2' %}
 {% endif %}
 
-{% if project_cloudfront_for_s3 == 'true' %}
+{% if project_cloudfront_for_s3 == true %}
   {% include './templates/cloudfront_for_s3.tf.j2' %}
 {% endif %}
 
 ##### redis #####
 
-{% if project_elasticache == 'true' %}
+{% if project_elasticache == true %}
   {% include './templates/elasticache.tf.j2' %}
 {% endif %}
 

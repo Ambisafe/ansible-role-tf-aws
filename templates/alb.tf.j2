@@ -4,7 +4,7 @@ resource "aws_alb" "this" {
 
   # Keep these arguments as is:
 
-  {% if aws_vpc_default == 'true' %}
+  {% if aws_vpc_default == true %}
         subnets = [ "${aws_default_subnet.a.id}" , "${aws_default_subnet.b.id}" , "${aws_default_subnet.c.id}"]
   {% else %}
         subnets = [ "{{ aws_subnet_id_a }}" , "{{ aws_subnet_id_b }}" , "{{ aws_subnet_id_c }}"]
@@ -29,7 +29,7 @@ resource "aws_alb_target_group" "this" {
   name = "tf-ecs-{{ project_name }}-{{ project_deployment_environment }}-alb-tg"
   port = 80
   protocol = "HTTP"
-{% if aws_vpc_default == 'true' %}
+{% if aws_vpc_default == true %}
   vpc_id = "${aws_default_vpc.this.id}"
 {% else %}
   vpc_id = "{{ aws_vpc_id }}"

@@ -1,4 +1,4 @@
-{% if project_zone_rds_cluster == 'true' %}
+{% if project_zone_rds_cluster == true %}
   {% include './templates/rds_cluster.tf.j2' %}
 {% else %}
   {% include './templates/rds.tf.j2' %}

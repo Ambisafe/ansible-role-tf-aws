@@ -46,7 +46,7 @@ EOF
 resource "aws_autoscaling_group" "ecs" {
   name = "tf-ecs-asg-{{ project_name }}-{{ project_deployment_environment }}"
 
-  {% if aws_vpc_default == 'true' %}
+  {% if aws_vpc_default == true %}
         vpc_zone_identifier  = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}" , "${aws_default_subnet.c.id}"]
   {% else %}
         vpc_zone_identifier  = ["{{ aws_subnet_id_a }}", "{{ aws_subnet_id_b }}" , "aws_subnet_id_c"]
