@@ -4,7 +4,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
   http_version = "http2"
 
   "origin" {
-    origin_id   = "origin-s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}-{{ s3_bucket_name }}"
+    origin_id   = "origin-s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
     domain_name = "${aws_s3_bucket.website_bucket.website_endpoint}"
 
     custom_origin_config {
@@ -46,7 +46,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     min_ttl          = "0"
     default_ttl      = "300"                                              //3600
     max_ttl          = "1200"                                             //86400
-    target_origin_id = "origin-s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}-{{ s3_bucket_name }}"
+    target_origin_id = "origin-s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
