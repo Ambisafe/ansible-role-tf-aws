@@ -13,7 +13,7 @@ data "aws_iam_policy_document" "container_instance_ec2_assume_role" {
 }
 
 resource "aws_iam_role" "container_instance_ec2" {
-  name = "tf_{{ project_name }}_{{ project_deployment_environment }}_ContainerInstanceProfile"
+  name = "tf_{{ organization_name }}_{{ project_type }}_{{ project_name }}_{{ project_deployment_environment }}_ContainerInstanceProfile"
   assume_role_policy = "${data.aws_iam_policy_document.container_instance_ec2_assume_role.json}"
 }
 
@@ -43,12 +43,12 @@ data "aws_iam_policy_document" "this" {
 }
 
 resource "aws_iam_policy" "this" {
-  name        = "tf_{{ project_name }}_{{ project_deployment_environment }}_ec2_cw"
+  name        = "tf_{{ organization_name }}_{{ project_type }}_{{ project_name }}_{{ project_deployment_environment }}_ec2_cw"
   policy      = "${data.aws_iam_policy_document.this.json}"
 }
 
 resource "aws_iam_policy_attachment" "this" {
-  name       = "tf_{{ project_name }}_{{ project_deployment_environment }}_ec2-cw-attachment"
+  name       = "tf_{{ organization_name }}_{{ project_type }}_{{ project_name }}_{{ project_deployment_environment }}_ec2-cw-attachment"
   roles      = ["${aws_iam_role.container_instance_ec2.name}"]
   policy_arn = "${aws_iam_policy.this.arn}"
 }
@@ -71,7 +71,7 @@ data "aws_iam_policy_document" "ecs_assume_role" {
 }
 
 resource "aws_iam_role" "ecs_service_role" {
-  name = "tf_{{ project_name }}_{{ project_deployment_environment }}_ecs_ServiceRole"
+  name = "tf_{{ organization_name }}_{{ project_type }}_{{ project_name }}_{{ project_deployment_environment }}_ecs_ServiceRole"
   assume_role_policy = "${data.aws_iam_policy_document.ecs_assume_role.json}"
 }
 
@@ -94,7 +94,7 @@ data "aws_iam_policy_document" "ecs_autoscale_assume_role" {
 }
 
 resource "aws_iam_role" "ecs_autoscale_role" {
-  name = "tf_{{ project_name }}_{{ project_deployment_environment }}_ecs_AutoscaleRole"
+  name = "tf_{{ organization_name }}_{{ project_type }}_{{ project_name }}_{{ project_deployment_environment }}_ecs_AutoscaleRole"
   assume_role_policy = "${data.aws_iam_policy_document.ecs_autoscale_assume_role.json}"
 }
 

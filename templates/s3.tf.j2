@@ -54,7 +54,7 @@ EOF
 
 resource "aws_iam_policy" "site_deployer_policy" {
   provider    = "aws.{{ aws_region }}"
-  name        = "deployer.{{ project_name }}.{{ project_deployment_environment }}"
+  name        = "deployer.{{ organization_name }}.{{ project_type }}.{{ project_name }}.{{ project_deployment_environment }}"
   path        = "/"
   description = "Policy allowing to publish a new version of the website to the S3 bucket"
   policy      = "${data.aws_iam_policy_document.user.json}"

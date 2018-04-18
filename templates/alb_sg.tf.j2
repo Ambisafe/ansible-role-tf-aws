@@ -1,5 +1,5 @@
 resource "aws_security_group" "alb" {
-  name        = "tf-alb-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  name = "tf-alb-sg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
 
 {% if aws_vpc_default == true %}
   vpc_id = "${aws_default_vpc.this.id}"
@@ -24,6 +24,6 @@ resource "aws_security_group" "alb" {
   }
 
   tags {
-    Name = "tf-alb-sg-{{ project_name }}-{{ project_deployment_environment }}"
+    Name = "tf-alb-sg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   }
 }

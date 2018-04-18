@@ -36,10 +36,6 @@ data "aws_availability_zones" "available" {}
   {% include './templates/ecs_sg.tf.j2' %}
 {% endif %}
 
-{% if project_ecs_sg_only == true %}
-  {% include './templates/ecs_sg.tf.j2' %}
-{% endif %}
-
 ##### rds ######
 
 {% if project_rds == true %}
@@ -50,10 +46,6 @@ data "aws_availability_zones" "available" {}
 
 {% if project_alb == true %}
   {% include './templates/alb.tf.j2' %}
-  {% include './templates/alb_sg.tf.j2' %}
-{% endif %}
-
-{% if project_alb_sg_only == true %}
   {% include './templates/alb_sg.tf.j2' %}
 {% endif %}
 

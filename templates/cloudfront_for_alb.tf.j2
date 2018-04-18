@@ -1,7 +1,7 @@
 resource "aws_cloudfront_distribution" "this" {
   origin {
     domain_name = "${aws_alb.this.dns_name}"
-    origin_id = "origin-elb-{{ project_deployment_environment }}-{{ project_name }}"
+    origin_id = "origin-elb-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
 
     custom_origin_config {
       http_port = 80
@@ -46,6 +46,10 @@ resource "aws_cloudfront_distribution" "this" {
     geo_restriction {
       restriction_type = "none"
     }
+  }
+
+  tags {
+    Name = "tf-cf-alb-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
   }
 
   viewer_certificate {

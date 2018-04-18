@@ -1,5 +1,5 @@
 resource "aws_security_group" "this" {
-  name        = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
+  name        = "tf-ecs-sg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   description = "Container Instance Allowed Ports"
 {% if aws_vpc_default == true %}
   vpc_id = "${aws_default_vpc.this.id}"
@@ -31,6 +31,6 @@ resource "aws_security_group" "this" {
   }
 
   tags {
-    Name = "tf-ecs-sg-{{ project_name }}-{{ project_deployment_environment }}"
+    Name = "tf-ecs-sg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   }
 }

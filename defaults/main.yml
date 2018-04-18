@@ -22,8 +22,6 @@ project_env_zone: "example.com"
 project_zone_cloudflare: false
 project_cloudfront_for_alb: false
 project_cloudfront_for_s3: false
-project_ecs_sg_only: false
-project_alb_sg_only: false
 project_zone_route53: false
 
 main_dns_record_create: true
