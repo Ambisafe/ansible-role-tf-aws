@@ -1,5 +1,5 @@
 resource "aws_alb" "this" {
-  name = "tf-ecs-alb-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  name = "tf-alb-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   security_groups = [ "${aws_security_group.alb.id}" ]
 
   # Keep these arguments as is:
@@ -12,7 +12,7 @@ resource "aws_alb" "this" {
   internal = false
 
   tags {
-    Name = "tf-ecs-alb-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+    Name = "tf-alb-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   }
 }
 
@@ -30,7 +30,7 @@ resource "aws_alb_listener" "default" {
 }
 
 resource "aws_alb_target_group" "this" {
-  name = "tf-ecs-alb-tg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  name = "tf-alb-tg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   port = 80
   protocol = "HTTP"
 {% if aws_vpc_default == true %}
@@ -43,6 +43,6 @@ resource "aws_alb_target_group" "this" {
     create_before_destroy = true
   }
     tags {
-    Name = "tf-ecs-alb-tg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+    Name = "tf-alb-tg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   }
 }
