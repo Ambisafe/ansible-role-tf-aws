@@ -45,6 +45,7 @@ data "aws_iam_policy_document" "user" {
     ]
   }
 
+{% if project_lamdba == true %}
   statement {
     sid = "4"
 
@@ -59,5 +60,6 @@ data "aws_iam_policy_document" "user" {
       identifiers = ["lambda.amazonaws.com"]
     }
   }
+{% endif %}
 
 }
