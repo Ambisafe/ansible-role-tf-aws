@@ -16,7 +16,7 @@ resource "aws_cloudfront_distribution" "this" {
   }
   enabled = true
 
-  default_root_object = {{ cloudfront_default_root_object }}
+  default_root_object = "{{ cloudfront_default_root_object }}"
 
 {% if project_deployment_environment == 'prod' %}
   aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"]
