@@ -49,6 +49,16 @@ elasticacheport: 6379
 elasticache_num_cache_nodes: 1
 elasticache_parameter_group_name: "default.redis3.2"
 
+lambda_memory_size: 128
+lambda_timeout: 3
+
+lambda_vars_WEBSITE_DOMAIN: "{{ project_name }}.{{ project_env_zone }}"
+lambda_vars_REDIRECT_ON_SUCCESS: true
+lambda_vars_CLOUDFRONT_KEYPAIR_ID: ""
+lambda_vars_ENCRYPTED_CLOUDFRONT_PRIVATE_KEY: ""
+lambda_vars_ENCRYPTED_HTPASSWD: ""
+lambda_vars_SESSION_DURATION: ""
+
 db_skip_final_snapshot: true
 
 terraform_dir: "/opt/terraform"
