@@ -1,5 +1,5 @@
 resource "aws_elasticache_replication_group" "this" {
-  replication_group_id          = "tf-elasticache-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  replication_group_id          = "tf-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   replication_group_description = "tf-elasticache-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   node_type                     = "{{ elasticache_node_type }}"
   number_cache_clusters         = {{ elasticache_num_cache_nodes }}
@@ -12,7 +12,7 @@ resource "aws_elasticache_replication_group" "this" {
 }
 
 resource "aws_security_group" "redis" {
-  name        = "tf-elasticache-sg-redis-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  name        = "tf-ecc-sg-redis-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   description = "{{ organization_name | title }} {{ project_type | title }} {{ project_name | title }} Elasticache {{ project_deployment_environment | title }}"
 
 {% if aws_vpc_default == true %}
@@ -36,12 +36,12 @@ resource "aws_security_group" "redis" {
   }
 
   tags {
-    Name = "tf-elasticache-eg-redis-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+    Name = "tf-ecc-eg-redis-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   }
 }
 
 resource "aws_elasticache_subnet_group" "this" {
-  name       = "tf-elasticache-subnet-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  name       = "tf-ecc-subnet-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
 {% if aws_vpc_default == true %}
   subnet_ids = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}", "${aws_default_subnet.c.id}"]
 {% else %}

@@ -4,20 +4,11 @@ resource "aws_cloudfront_distribution" "website_cdn" {
   http_version = "http2"
 
   "origin" {
-    origin_id   = "origin-s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
-    domain_name = "${aws_s3_bucket.website_bucket.website_endpoint}"
-
-    custom_origin_config {
-      origin_protocol_policy = "http-only"
-      http_port              = "80"
-      https_port             = "443"
-      origin_ssl_protocols = [
-        "TLSv1.2",
-        "TLSv1.1",
-        "TLSv1"
-      ]
+    origin_id   = "s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
+    domain_name = "${aws_s3_bucket.website_bucket.bucket_domain_name}"
+    s3_origin_config {
+        origin_access_identity = ""
     }
-
   }
 
   default_root_object = "{{ cloudfront_default_root_object }}"
@@ -30,11 +21,10 @@ resource "aws_cloudfront_distribution" "website_cdn" {
   }
 
   "default_cache_behavior" {
-    allowed_methods = ["GET", "HEAD", "DELETE", "OPTIONS", "PATCH", "POST", "PUT"]
+    allowed_methods = ["GET", "HEAD"]
     cached_methods  = ["GET", "HEAD"]
 
     forwarded_values {
-      headers = ["*"]
       query_string = true
       cookies {
         forward = "all"
@@ -46,7 +36,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     min_ttl          = "0"
     default_ttl      = "300"                                              //3600
     max_ttl          = "1200"                                             //86400
-    target_origin_id = "origin-s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
+    target_origin_id = "s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
