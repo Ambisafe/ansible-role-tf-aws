@@ -1,11 +1,14 @@
 provider "aws" {
     region = "{{ aws_region }}"
+    alias = "{{ aws_region }}"
 }
 
+{% if aws_region != "us-east-1" %}
 provider "aws" {
     region = "us-east-1"
     alias = "us-east-1"
 }
+{% endif %}
 
 ##### ecs #####
 
