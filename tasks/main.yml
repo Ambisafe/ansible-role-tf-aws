@@ -45,27 +45,27 @@
 
 # run terraform init
 - name: Run the terraform initialization
-  command: "terraform init -no-color"
+  command: "AWS_DEFAULT_REGION={{ aws_region }} terraform init -no-color"
   args:
     chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
   tags: configuration
 
 - name: Run the terraform update modules
-  command: "terraform get -update -no-color"
+  command: "AWS_DEFAULT_REGION={{ aws_region }} terraform get -update -no-color"
   args:
     chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
   tags: configuration
 
 #run terraform plan
 - name: Run the terraform plan
-  command: "terraform plan -no-color {{ terraform_arg }}"
+  command: "AWS_DEFAULT_REGION={{ aws_region }} terraform plan -no-color {{ terraform_arg }}"
   args:
     chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
   tags: configuration
 
 #run terraform apply -auto-approve
 - name: Run the installation on AWS
-  command: "terraform apply -auto-approve -no-color {{ terraform_arg }}"
+  command: "AWS_DEFAULT_REGION={{ aws_region }} terraform apply -auto-approve -no-color {{ terraform_arg }}"
   args:
     chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
   tags: apply
