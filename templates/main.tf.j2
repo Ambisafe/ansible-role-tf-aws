@@ -90,3 +90,8 @@ data "aws_availability_zones" "available" {}
 {% if project_s3 == true %}
   {% include './templates/s3.tf.j2' %}
 {% endif %}
+
+##### ecr ######
+{% if project_ecr == true %}
+  {% include './templates/ecr.tf.j2' %}
+{% endif %}
