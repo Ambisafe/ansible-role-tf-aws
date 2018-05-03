@@ -1,9 +1,9 @@
 resource "aws_route53_record" "rds" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
 {% if project_deployment_environment == 'prod' %}
-  name = "rds.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+  name = "rds.{{ domain_url }}"
 {% else %}
-  name = "rds.{{ project_deployment_environment }}.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+  name = "rds.{{ project_deployment_environment }}.{{ domain_url }}"
 {% endif %}
   type = "CNAME"
 
@@ -22,9 +22,9 @@ resource "aws_route53_record" "rds" {
 resource "aws_route53_record" "rds_reader" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
 {% if project_deployment_environment == 'prod' %}
-  name = "ro.rds.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+  name = "ro.rds.{{ domain_url }}"
 {% else %}
-  name = "ro.rds.{{ project_deployment_environment }}.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+  name = "ro.rds.{{ project_deployment_environment }}.{{ domain_url }}"
 {% endif %}
   type = "CNAME"
 

@@ -2,9 +2,9 @@
 resource "cloudflare_record" "rds" {
   domain = "{{ project_env_zone }}"
 {% if project_deployment_environment == 'prod' %}
-  name = "rds.{{ project_name }}.{{ project_env_zone }}"
+  name = "rds.{{ domain_url }}"
 {% else %}
-  name = "rds.{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"
+  name = "rds.{{ project_deployment_environment }}.{{ domain_url }}"
 {% endif %}
 
 {% if project_zone_rds_cluster == true %}
@@ -21,9 +21,9 @@ resource "cloudflare_record" "rds" {
 resource "cloudflare_record" "rds_reader" {
   domain = "{{ project_env_zone }}"
 {% if project_deployment_environment == 'prod' %}
-  name = "reader.rds.{{ project_name }}.{{ project_env_zone }}"
+  name = "reader.rds.{{ domain_url }}"
 {% else %}
-  name = "reader.rds.{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"
+  name = "reader.rds.{{ project_deployment_environment }}.{{ domain_url }}"
 {% endif %}
 
   value = "${aws_rds_cluster.default.reader_endpoint}"

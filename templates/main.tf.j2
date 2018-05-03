@@ -60,6 +60,11 @@ data "aws_availability_zones" "available" {}
 {% endif %}
 
 ##### dns #####
+{% if skip_project_name_domain_prefix == true %}
+{% set domain_url = project_env_zone %}
+{% else %}
+{% set domain_url = project_name + "." + project_env_zone %}
+{% endif %}
 
 {% if project_zone_cloudflare == true %}
   {% include './templates/cloudflare.tf.j2' %}

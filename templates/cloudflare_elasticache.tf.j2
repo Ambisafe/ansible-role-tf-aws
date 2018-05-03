@@ -1,9 +1,9 @@
 resource "cloudflare_record" "redis" {
   domain = "{{ project_env_zone }}"
 {% if project_deployment_environment == 'prod' %}
-  name = "redis.{{ project_name }}.{{ project_env_zone }}"
+  name = "redis.{{ domain_url }}"
 {% else %}
-  name = "redis.{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"
+  name = "redis.{{ project_deployment_environment }}.{{ domain_url }}"
 {% endif %}
   value = "${aws_elasticache_replication_group.this.primary_endpoint_address}"
   type = "CNAME"

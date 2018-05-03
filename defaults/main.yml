@@ -27,6 +27,7 @@ project_lambda: false
 
 main_dns_record_create: true
 skip_env_domain_prefix: false
+skip_project_name_domain_prefix: false
 
 cloudfront_default_root_object: ""
 

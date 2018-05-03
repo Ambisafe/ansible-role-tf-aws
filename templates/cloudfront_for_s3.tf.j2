@@ -63,9 +63,9 @@ resource "aws_cloudfront_distribution" "website_cdn" {
   }
 
   {% if project_deployment_environment == 'prod' or skip_env_domain_prefix == true %}
-    aliases = ["{{ project_name }}.{{ project_env_zone }}"]
+    aliases = ["{{ domain_url }}"]
   {% else %}
-    aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"]
+    aliases = ["{{ project_deployment_environment }}.{{ domain_url }}"]
   {% endif %}
 
   depends_on = ["aws_acm_certificate_validation.default"]

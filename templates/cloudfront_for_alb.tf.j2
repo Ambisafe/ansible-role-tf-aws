@@ -19,9 +19,9 @@ resource "aws_cloudfront_distribution" "this" {
   default_root_object = "{{ cloudfront_default_root_object }}"
 
 {% if project_deployment_environment == 'prod' %}
-  aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"]
+  aliases = ["{{ project_deployment_environment }}.{{ domain_url }}"]
 {% else %}
-  aliases = ["{{ project_deployment_environment }}.{{ project_name }}.{{ project_env_zone }}"]
+  aliases = ["{{ project_deployment_environment }}.{{ domain_url }}"]
 {% endif %}
 
   default_cache_behavior {
