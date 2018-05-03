@@ -1,5 +1,5 @@
 resource "aws_alb" "this" {
-  name = "tf-alb-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  name = "tf-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   security_groups = [ "${aws_security_group.alb.id}" ]
 
   # Keep these arguments as is:
@@ -30,7 +30,7 @@ resource "aws_alb_listener" "default" {
 }
 
 resource "aws_alb_target_group" "this" {
-  name = "tf-alb-tg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  name = "tf-tg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   port = 80
   protocol = "HTTP"
 {% if aws_vpc_default == true %}
