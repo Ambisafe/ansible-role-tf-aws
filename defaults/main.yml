@@ -20,6 +20,7 @@ project_rds_cluster: false
 project_elasticache: false
 project_env_zone: "example.com"
 project_zone_cloudflare: false
+project_zone_rds_cluster: false
 project_cloudfront_for_alb: false
 project_cloudfront_for_s3: false
 project_zone_route53: false
