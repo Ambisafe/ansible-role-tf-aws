@@ -15,7 +15,7 @@ resource "aws_key_pair" "this" {
 }
 
 resource "aws_launch_configuration" "ecs" {
-  name = "tf-ecs-lc-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  name = "tf-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   image_id                    = "${data.aws_ami.this.id}"
   instance_type               = "{{ ecs_instance_type }}"
   key_name                    = "tf-awx-key-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
@@ -44,7 +44,7 @@ EOF
 }
 
 resource "aws_autoscaling_group" "ecs" {
-  name = "tf-ecs-asg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  name = "tf-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
 
   {% if aws_vpc_default == true %}
         vpc_zone_identifier  = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}" , "${aws_default_subnet.c.id}"]
@@ -61,7 +61,7 @@ resource "aws_autoscaling_group" "ecs" {
 
   tags = [{
     key                 = "Name"
-    value               = "tf-ecs-asg-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+    value               = "tf-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
     propagate_at_launch = true
   }]
 
@@ -72,5 +72,5 @@ resource "aws_autoscaling_group" "ecs" {
 
 # Make this a var that an get passed in?
 resource "aws_ecs_cluster" "cluster" {
-  name = "tf-ecs-cluster-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  name = "tf-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
 }
