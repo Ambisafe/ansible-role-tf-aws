@@ -55,7 +55,7 @@ resource "aws_route53_record" "cert_alternative" {
 {% if aws_region != 'us-east-1' %}
 resource "aws_acm_certificate" "us-east-1" {
   provider = "aws.us-east-1"
-  domain_name = "{{ domain_url }}}"
+  domain_name = "{{ domain_url }}"
   subject_alternative_names = ["*.{{ domain_url }}"]
   validation_method = "DNS"
 }
