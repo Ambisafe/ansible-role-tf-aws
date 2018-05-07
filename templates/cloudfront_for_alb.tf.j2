@@ -109,7 +109,7 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
  ordered_cache_behavior {
-    path_pattern     = "{{ origin.behavior_path }}"
+    path_pattern     = "{{ origin.path_pattern }}"
     allowed_methods  = {{ origin.allowed_methods | replace('\'', '\"') | replace('u', '') }}
     cached_methods   = {{ origin.cached_methods | replace('\'', '\"') | replace('u', '') }}
     target_origin_id = "tf-{{loop.index}}-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
