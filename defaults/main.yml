@@ -10,6 +10,7 @@ aws_subnet_id_c : ""
 project_type: "project"
 project_name: "name"
 project_deployment_environment: "env"
+cloudfront_s3_origins:
 
 project_s3: false
 project_ecs: false
