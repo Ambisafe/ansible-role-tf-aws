@@ -27,8 +27,7 @@ resource "aws_iam_access_key" "deployer" {
   user = "${aws_iam_user.deployer.name}"
 }
 
-{% for origin in cloudfront_s3_origins %}
-resource "aws_s3_bucket" "s3_{{loop.index}}" {
+resource "aws_s3_bucket" "s3" {
 
   provider = "aws.{{ aws_region }}"
   bucket   = "{{ origin.s3_bucket_name }}"
@@ -80,7 +79,6 @@ EOF
 
 }
 
-{% endfor %}
 {% endif %}
 
 resource "aws_cloudfront_distribution" "this" {
@@ -102,7 +100,7 @@ resource "aws_cloudfront_distribution" "this" {
 {% if cloudfront_s3_origins is defined and cloudfront_s3_origins %}
 origin {
     origin_id   = "s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
-    domain_name = "${aws_s3_bucket.s3_{{ loop.index }}.bucket_domain_name}"
+    domain_name = "${aws_s3_bucket.s3.bucket_domain_name}"
     s3_origin_config {
         origin_access_identity = ""
     }
