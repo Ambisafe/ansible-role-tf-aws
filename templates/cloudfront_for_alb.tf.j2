@@ -26,7 +26,6 @@ resource "aws_iam_user" "deployer" {
 resource "aws_iam_access_key" "deployer" {
   user = "${aws_iam_user.deployer.name}"
 }
-{% endif %}
 
 {% for origin in cloudfront_s3_origins %}
 resource "aws_s3_bucket" "s3_{{loop.index}}" {
@@ -82,9 +81,10 @@ EOF
 }
 
 {% endfor %}
+{% endif %}
 
 resource "aws_cloudfront_distribution" "this" {
-
+{% if cloudfront_s3_origins is defined and cloudfront_s3_origins %}
 {% for origin in cloudfront_s3_origins %}
   origin {
     origin_id   = "s3-{{ loop.index }}-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
@@ -111,6 +111,7 @@ resource "aws_cloudfront_distribution" "this" {
     viewer_protocol_policy = "{{ origin.viewer_protocol_policy }}"
   }
 {% endfor %}
+{% endif %}
   enabled = true
 
   default_root_object = "{{ cloudfront_default_root_object }}"
