@@ -1,19 +1,116 @@
-resource "aws_cloudfront_distribution" "this" {
-  origin {
-    domain_name = "${aws_alb.this.dns_name}"
-    origin_id = "tf-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
+{% if cloudfront_s3_origins is defined and cloudfront_s3_origins %}
 
-    custom_origin_config {
-      http_port = 80
-      https_port = 443
-      origin_protocol_policy = "https-only"
-      origin_ssl_protocols = [
-        "TLSv1.2",
-        "TLSv1.1",
-        "TLSv1"]
-    }
+{% include './templates/aws_policies/static_iam_user_policy.tf.j2' %}
 
+
+resource "aws_iam_policy" "site_deployer_policy" {
+  provider    = "aws.{{ aws_region }}"
+  name        = "deployer.{{ organization_name }}.{{ project_type }}.{{ project_name }}.{{ project_deployment_environment }}"
+  path        = "/"
+  description = "Policy allowing to publish a new version of the website to the S3 bucket"
+  policy      = "${data.aws_iam_policy_document.user.json}"
+}
+
+resource "aws_iam_policy_attachment" "site-deployer-attach-user-policy" {
+  provider   = "aws.{{ aws_region }}"
+  name       = "{{ s3_bucket_name }}-deployer-policy"
+  users      = ["${aws_iam_user.deployer.name}"]
+  policy_arn = "${aws_iam_policy.site_deployer_policy.arn}"
+}
+
+resource "aws_iam_user" "deployer" {
+  name = "deploy@{{ project_type }}.{{ project_name }}.{{ project_deployment_environment }}"
+  path = "/"
+}
+
+resource "aws_iam_access_key" "deployer" {
+  user = "${aws_iam_user.deployer.name}"
+}
+{% endif %}
+
+{% for origin in cloudfront_s3_origins %}
+resource "aws_s3_bucket" "s3_{{loop.index}}" {
+
+  provider = "aws.{{ aws_region }}"
+  bucket   = "{{ origin.s3_bucket_name }}"
+
+  website {
+    index_document = "index.html"
   }
+
+  policy  = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PrivateListGetBucket",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": [
+                    "${aws_iam_user.deployer.arn}"
+                ]
+            },
+            "Action": [
+                "s3:GetBucketLocation",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::{{ origin.s3_bucket_name }}"
+            ]
+        },
+        {
+            "Sid": "PrivateGetPutObject",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": [
+                    "${aws_iam_user.deployer.arn}"
+                ]
+            },
+            "Action": [
+                "s3:Get*",
+                "s3:Put*",
+                "s3:Delete*"
+            ],
+            "Resource": [
+                "arn:aws:s3:::{{ origin.s3_bucket_name }}/*"
+            ]
+        }
+    ]
+}
+EOF
+
+}
+
+{% endfor %}
+
+resource "aws_cloudfront_distribution" "this" {
+
+{% for origin in cloudfront_s3_origins %}
+  origin {
+    origin_id   = "s3-{{ loop.index }}-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
+    domain_name = "${aws_s3_bucket.s3_{{ loop.index }}.bucket_domain_name}"
+    s3_origin_config {
+        origin_access_identity = ""
+    }
+  }
+ ordered_cache_behavior {
+    path_pattern     = "{{ origin.behavior_path }}"
+    allowed_methods  = {{ origin.allowed_methods | replace('\'', '\"') | replace('u', '') }}
+    cached_methods   = {{ origin.cached_methods | replace('\'', '\"') | replace('u', '') }}
+    target_origin_id = "tf-{{loop.index}}-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
+    forwarded_values {
+      query_string = "{{ origin.forwarded_values.query_string }}"
+      cookies {
+        forward = "{{ origin.forwarded_values.cookies_forward }}"
+      }
+    }
+    min_ttl                = "{{ origin.min_ttl }}"
+    default_ttl            = "{{ origin.default_ttl }}"
+    max_ttl                = "{{ origin.max_ttl }} "
+    compress               = "{{ origin.compress }}"
+    viewer_protocol_policy = "{{ origin.viewer_protocol_policy }}"
+  }
+{% endfor %}
   enabled = true
 
   default_root_object = "{{ cloudfront_default_root_object }}"
