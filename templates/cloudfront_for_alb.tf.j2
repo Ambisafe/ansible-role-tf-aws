@@ -119,10 +119,10 @@ resource "aws_cloudfront_distribution" "this" {
         forward = "{{ origin.forwarded_values.cookies_forward }}"
       }
     }
-    min_ttl                = "{{ origin.min_ttl }}"
-    default_ttl            = "{{ origin.default_ttl }}"
-    max_ttl                = "{{ origin.max_ttl }} "
-    compress               = "{{ origin.compress }}"
+    min_ttl                = {{ origin.min_ttl }}
+    default_ttl            = {{ origin.default_ttl }}
+    max_ttl                = {{ origin.max_ttl }}
+    compress               = {{ origin.compress }}
     viewer_protocol_policy = "{{ origin.viewer_protocol_policy }}"
   }
 {% endfor %}
