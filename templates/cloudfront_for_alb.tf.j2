@@ -100,19 +100,19 @@ resource "aws_cloudfront_distribution" "this" {
 
   }
 {% if cloudfront_s3_origins is defined and cloudfront_s3_origins %}
-{% for origin in cloudfront_s3_origins %}
-  origin {
-    origin_id   = "s3-{{ loop.index }}-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
+origin {
+    origin_id   = "s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
     domain_name = "${aws_s3_bucket.s3_{{ loop.index }}.bucket_domain_name}"
     s3_origin_config {
         origin_access_identity = ""
     }
-  }
+}
+{% for origin in cloudfront_s3_origins %}
  ordered_cache_behavior {
     path_pattern     = "{{ origin.path_pattern }}"
     allowed_methods  = {{ origin.allowed_methods | replace('\'', '\"') | replace('u', '') }}
     cached_methods   = {{ origin.cached_methods | replace('\'', '\"') | replace('u', '') }}
-    target_origin_id = "tf-{{loop.index}}-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
+    target_origin_id = "s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
     forwarded_values {
       query_string = "{{ origin.forwarded_values.query_string }}"
       cookies {
