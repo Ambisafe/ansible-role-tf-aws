@@ -16,10 +16,10 @@ resource "aws_route53_record" "this" {
   count = 0
 {% endif %}
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
-{% if project_deployment_environment == 'prod' %}
-  name = "{{ project_name }}.${data.aws_route53_zone.selected.name}"
+{% if skip_env_domain_prefix== true %}
+  name = "{{ domain_url }}"
 {% else %}
-  name = "{{ project_deployment_environment }}.{{ project_name }}.${data.aws_route53_zone.selected.name}"
+  name = "{{ project_deployment_environment }}.{{ domain_url }}"
 {% endif %}
   type = "A"
   alias {
