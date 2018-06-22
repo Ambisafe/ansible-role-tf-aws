@@ -39,6 +39,13 @@ data "aws_availability_zones" "available" {}
   {% include './templates/ecs_sg.tf.j2' %}
 {% endif %}
 
+
+##### eks ######
+
+{% if project_eks == true %}
+  {% include './templates/eks.tf.j2' %}
+{% endif %}
+
 ##### rds ######
 
 {% if project_rds == true %}

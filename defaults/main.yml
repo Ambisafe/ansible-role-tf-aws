@@ -14,6 +14,7 @@ cloudfront_s3_origins:
 
 project_s3: false
 project_ecs: false
+project_eks: false
 project_alb: false
 project_iam: false
 project_rds: false
@@ -36,6 +37,11 @@ cloudfront_default_root_object: ""
 s3_bucket_name: "tf-s3-test"
 s3_bucket_policy_name: "test_iam_user_policy.json.j2"
 iam_user_policy_name: "test_s3_bucket_policy.json.j2"
+
+eks_min_size: 1
+eks_max_size: 2
+eks_desired_capacity: 2
+eks_instance_type: "m4.large"
 
 ecs_min_size: 0
 ecs_max_size: 1
