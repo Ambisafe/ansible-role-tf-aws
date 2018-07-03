@@ -11,7 +11,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     }
   }
 
-  default_root_object = "{{ cloudfront_default_root_object }}"
+  default_root_object = "{{ var.cloudfront_default_root_object }}"
 
   custom_error_response {
     error_code            = "404"
@@ -63,9 +63,9 @@ resource "aws_cloudfront_distribution" "website_cdn" {
   }
 
   {% if project_deployment_environment == 'prod' or skip_env_domain_prefix == true %}
-    aliases = ["{{ domain_url }}"]
+    aliases = ["{{ domain_name }}"]
   {% else %}
-    aliases = ["{{ project_deployment_environment }}.{{ domain_url }}"]
+    aliases = ["{{ project_deployment_environment }}.{{ domain_name }}"]
   {% endif %}
 
   depends_on = ["aws_acm_certificate_validation.default"]

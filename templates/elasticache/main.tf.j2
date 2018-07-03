@@ -1,10 +1,10 @@
 resource "aws_elasticache_replication_group" "this" {
   replication_group_id          = "tf-{{ project_name }}-{{ project_deployment_environment }}"
   replication_group_description = "tf-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
-  node_type                     = "{{ elasticache_node_type }}"
-  number_cache_clusters         = {{ elasticache_num_cache_nodes }}
-  port                          = {{ elasticache_port }}
-  parameter_group_name          = "{{ elasticache_parameter_group_name }}"
+  node_type                     = "{{ var.node_type }}"
+  number_cache_clusters         = {{ var.num_cache_nodes }}
+  port                          = {{ var.port }}
+  parameter_group_name          = "{{ var.parameter_group_name }}"
   availability_zones = ["${data.aws_availability_zones.available.names[0]}", "${data.aws_availability_zones.available.names[1]}", "${data.aws_availability_zones.available.names[2]}"]
   subnet_group_name = "${aws_elasticache_subnet_group.this.name}"
   automatic_failover_enabled    = false
@@ -22,8 +22,8 @@ resource "aws_security_group" "redis" {
 {% endif %}
 
   ingress {
-        from_port = 6379
-        to_port = 6379
+        from_port = {{ var.port }}
+        to_port = {{ var.port }}
         protocol = "tcp"
         security_groups = ["${aws_security_group.this.id}"]
   }
@@ -48,3 +48,7 @@ resource "aws_elasticache_subnet_group" "this" {
   subnet_ids = ["{{ aws_subnet_id_a }}" , "{{ aws_subnet_id_b }}" , "{{ aws_subnet_id_c }}"]
 {% endif %}
 }
+
+{% if var.route53 == true %}
+  {% include 'elasticache/route53.tf.j2' %}
+{% endif %}

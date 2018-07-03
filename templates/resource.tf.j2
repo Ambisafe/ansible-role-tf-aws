@@ -1,0 +1,25 @@
+{% if tf.count is defined -%}
+count = {{ tf.count | to_json }}
+{% endif -%}
+
+{% if tf.depends_on is defined -%}
+depends_on = {{ tf.depends_on | to_json }}
+{% endif -%}
+
+{% if tf.provider is defined -%}
+provider = {{ tf.provider | to_json }}
+{% endif %}
+
+{% if tf.lifecycle is defined -%}
+lifecycle {
+    {% if tf.lifecycle.create_before_destroy is defined -%}
+    create_before_destroy = {{ tf.lifecycle.create_before_destroy | to_json }}
+    {% endif -%}
+    {% if tf.lifecycle.prevent_destroy is defined -%}
+    prevent_destroy = {{ tf.lifecycle.prevent_destroy | to_json }}
+    {% endif -%}
+    {% if tf.lifecycle.ignore_changes is defined -%}
+    ignore_changes = {{ tf.lifecycle.ignore_changes | to_json }}
+    {% endif -%}
+}
+{% endif -%}

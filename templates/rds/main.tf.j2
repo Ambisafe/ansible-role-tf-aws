@@ -1,0 +1,9 @@
+{% if var.cluster == true %}
+  {% include 'rds/cluster.tf.j2' %}
+{% else %}
+  {% include 'rds/instance.tf.j2' %}
+{% endif %}
+
+{% if var.route53 == true %}
+  {% include 'rds/route53.tf.j2' %}
+{% endif %}

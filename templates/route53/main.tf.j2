@@ -3,37 +3,36 @@ data "aws_route53_zone" "selected" {
   name = "{{ project_env_zone }}"
 }
 
-{% if project_rds == true %}
- {% include './templates/route53_rds.tf.j2' %}
-{% endif %}
-
-{% if project_elasticache == true %}
-  {% include './templates/route53_elasticache.tf.j2' %}
-{% endif %}
-
 resource "aws_route53_record" "this" {
 {% if main_dns_record_create == "false" %}
   count = 0
 {% endif %}
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
 {% if skip_env_domain_prefix== true %}
-  name = "{{ domain_url }}"
+  name = "{{ domain_name }}"
 {% else %}
-  name = "{{ project_deployment_environment }}.{{ domain_url }}"
+  name = "{{ project_deployment_environment }}.{{ domain_name }}"
 {% endif %}
   type = "A"
   alias {
-{% if project_cloudfront_for_alb == true %}
+{% set alb = var.get.%}
+{% if var.alb == True %}
     name = "${aws_cloudfront_distribution.this.domain_name}"
     zone_id = "${aws_cloudfront_distribution.this.hosted_zone_id}"
 {% endif %}
-{% if project_cloudfront_for_s3 == true %}
+{% if var.cloudfront_for_s3 == true %}
     name = "${aws_cloudfront_distribution.website_cdn.domain_name}"
     zone_id = "${aws_cloudfront_distribution.website_cdn.hosted_zone_id}"
 {% endif %}
     evaluate_target_health = false
   }
 }
+{% if var.alb is defined and var.alb == True %}
+{% include './route53/cloudfront/alb.tf.j2' %}
+{% endif %}
+{% if var.cloudfront_for_s3 == true %}
+{% include './route53/cloudfront/s3.tf.j2' %}
+{% endif %}
 
 resource "aws_route53_record" "cert_default" {
   name = "${aws_acm_certificate.default.domain_validation_options.0.resource_record_name}"
@@ -55,15 +54,15 @@ resource "aws_route53_record" "cert_alternative" {
 {% if aws_region != 'us-east-1' %}
 resource "aws_acm_certificate" "us-east-1" {
   provider = "aws.us-east-1"
-  domain_name = "{{ domain_url }}"
-  subject_alternative_names = ["*.{{ domain_url }}"]
+  domain_name = "{{ domain_name }}"
+  subject_alternative_names = ["*.{{ domain_name }}"]
   validation_method = "DNS"
 }
 {% endif %}
 
 resource "aws_acm_certificate" "default" {
-  domain_name = "{{ domain_url }}"
-  subject_alternative_names = ["*.{{ domain_url }}"]
+  domain_name = "{{ domain_name }}"
+  subject_alternative_names = ["*.{{ domain_name }}"]
   validation_method = "DNS"
 }
 

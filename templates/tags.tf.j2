@@ -1,0 +1,7 @@
+{% if tag.items -%}
+tags {
+    {% for name, value in tag.items -%}
+    {{ name }} = {{ value | to_json }}
+    {% endfor -%}
+}
+{% endif -%}

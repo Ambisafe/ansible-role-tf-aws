@@ -1,5 +1,5 @@
 variable "cluster-name" {
-  default = "{{ eks_name }}"
+  default = "{{ var.cluster_name }}"
   type    = "string"
 }
 
@@ -45,12 +45,12 @@ resource "aws_security_group" "kube-cluster" {
   vpc_id = "{{ aws_vpc_id }}"
 {% endif %}
 
-{% for ingress in eks_sg_ingress %}
+{% for ingress in var.ingress %}
   ingress {
     from_port = {{ ingress.from_port }}
     to_port = {{ ingress.to_port }}
     protocol = "{{ ingress.protocol }}"
-    cidr_blocks = {{ ingress.cidr_blocks | replace('\'', '\"') | replace('u', '') }}
+    cidr_blocks = {{ ingress.cidr_blocks | to_json }}
   }
 {% endfor %}
 
@@ -273,7 +273,7 @@ resource "aws_launch_configuration" "kube" {
   associate_public_ip_address = true
   iam_instance_profile        = "${aws_iam_instance_profile.kube-node.name}"
   image_id                    = "${data.aws_ami.eks-worker.id}"
-  instance_type               = "{{ eks_instance_type }}"
+  instance_type               = "{{ var.instance_type }}"
   name_prefix                 = "${var.cluster-name}"
   security_groups             = ["${aws_security_group.kube-node.id}"]
   user_data_base64            = "${base64encode(local.kube-node-userdata)}"
@@ -284,10 +284,10 @@ resource "aws_launch_configuration" "kube" {
 }
 
 resource "aws_autoscaling_group" "kube" {
-  desired_capacity     = "{{ eks_desired_capacity }}"
+  desired_capacity     = "{{ var.desired_capacity }}"
   launch_configuration = "${aws_launch_configuration.kube.id}"
-  max_size             = "{{ eks_max_size }}"
-  min_size             = "{{ eks_min_size }}"
+  max_size             = "{{ var.max_size }}"
+  min_size             = "{{ var.min_size }}"
   name                 = "tf-eks-kube"
   {% if aws_vpc_default == true %}
         vpc_zone_identifier  = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}", "${aws_default_subnet.c.id}"]

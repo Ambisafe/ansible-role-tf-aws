@@ -1,104 +1,38 @@
-provider "aws" {
-    region = "{{ aws_region }}"
-    alias = "{{ aws_region }}"
-}
+{% macro tf_primitive(primitive_name, primitive_config, primitive_index) -%}
+{% set tf=namespace(**dict(default.get(primitive_name, {}).get('tf', {}).items() + primitive_config.get('tf', {}).items())) -%}
+{% set var=namespace(**dict(default.get(primitive_name, {}).get('var', {}).items() + primitive_config.get('var', {}).items())) -%}
+{% set tag=namespace(items = dict(default.get(primitive_name, {}).get('tags', {}).items() + primitive_config.get('tags', {}).items()).items()) -%}
+{% set name=primitive_config.get('name', default.get(primitive_name, {}).get('name', primitive_index)) -%}
+{% set templates=primitive_config.get('templates', default.get(primitive_name, {}).get('templates', [primitive_name + '/main.tf.j2',])) -%}
+{% for template in templates -%}
 
-{% if aws_region != "us-east-1" %}
-provider "aws" {
-    region = "us-east-1"
-    alias = "us-east-1"
-}
-{% endif %}
+{% include template with context %}
 
-##### ecs #####
-
-data "aws_availability_zones" "available" {}
-
-{% if aws_vpc_default == true %}
-  resource "aws_default_vpc" "this" {
-      tags {
-          Name = "Default VPC"
-      }
-  }
-
-  resource "aws_default_subnet" "a" {
-    availability_zone = "{{ aws_region }}a"
-  }
-
-  resource "aws_default_subnet" "b" {
-    availability_zone = "{{ aws_region }}b"
-  }
-
-  resource "aws_default_subnet" "c" {
-    availability_zone = "{{ aws_region }}c"
-  }
-{% endif %}
-
-{% if project_ecs == true %}
-  {% include './templates/ecs.tf.j2' %}
-  {% include './templates/ecs_sg.tf.j2' %}
-{% endif %}
-
-
-##### eks ######
-
-{% if project_eks == true %}
-  {% include './templates/eks.tf.j2' %}
-{% endif %}
-
-##### rds ######
-
-{% if project_rds == true %}
-  {% include './templates/rds_main.tf.j2' %}
-{% endif %}
-
-##### alb #####
-
-{% if project_alb == true %}
-  {% include './templates/alb.tf.j2' %}
-  {% include './templates/alb_sg.tf.j2' %}
-{% endif %}
-
-
-##### iam #####
-
-{% if project_iam == true %}
-  {% include './templates/iam.tf.j2' %}
-{% endif %}
-
-##### dns #####
+{% endfor -%}
+{%- endmacro %}
 {% if skip_project_name_domain_prefix == true %}
-{% set domain_url = project_env_zone %}
+{% set domain_name = project_env_zone %}
 {% else %}
-{% set domain_url = project_name + "." + project_env_zone %}
+{% set domain_name = project_name + "." + project_env_zone %}
 {% endif %}
 
-{% if project_zone_cloudflare == true %}
-  {% include './templates/cloudflare.tf.j2' %}
-{% endif %}
-
-{% if project_zone_route53 == true %}
-  {% include './templates/route53.tf.j2' %}
-{% endif %}
-
-##### cloudfront #####
-
-{% if project_cloudfront_for_alb == true %}
-  {% include './templates/cloudfront_for_alb.tf.j2' %}
-{% endif %}
-
-{% if project_cloudfront_for_s3 == true %}
-  {% include './templates/cloudfront_for_s3.tf.j2' %}
-{% endif %}
-
-##### redis #####
-
-{% if project_elasticache == true %}
-  {% include './templates/elasticache.tf.j2' %}
-{% endif %}
-
-##### s3 ######
-
-{% if project_s3 == true %}
-  {% include './templates/s3.tf.j2' %}
-{% endif %}
+##### begin:header
+{% include 'header.tf.j2' %}
+##### end:header
+{% for primitive_dict in primitive -%}
+{% set primitive_index = loop.index | to_json -%}
+{% for primitive_name, primitive_config in primitive_dict.items() -%}
+{% if primitive_config == True -%}
+{% set primitive_config = {} -%}
+{%- endif  %}
+{% if primitive_config is not mapping  -%}
+{% set primitive_config = dict(name=primitive_config) %}
+{%- endif  %}
+##### begin:{{ primitive_name }}:{{primitive_index}}
+{{ tf_primitive(primitive_name, primitive_config, primitive_index) }}
+##### end:{{ primitive_name }}:{{primitive_index}}
+{% endfor -%}
+{% endfor %}
+##### begin:footer
+{% include 'footer.tf.j2' %}
+##### end:footer

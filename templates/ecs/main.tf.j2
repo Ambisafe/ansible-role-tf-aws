@@ -11,13 +11,13 @@ data "aws_ami" "this" {
 
 resource "aws_key_pair" "this" {
   key_name   = "tf-awx-key-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
-  public_key = "{{ ecs_ssh_public_key }}"
+  public_key = "{{ var.ssh_public_key }}"
 }
 
 resource "aws_launch_configuration" "ecs" {
   name = "tf-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   image_id                    = "${data.aws_ami.this.id}"
-  instance_type               = "{{ ecs_instance_type }}"
+  instance_type               = "{{ var.instance_type }}"
   key_name                    = "tf-awx-key-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
   user_data = <<EOF
 #!/bin/bash
@@ -25,7 +25,7 @@ echo ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config
 echo ECS_ENGINE_AUTH_TYPE=docker >> /etc/ecs/ecs.config
 echo "ECS_ENGINE_AUTH_DATA={\"https://index.docker.io/v1/\":{\"username\":\"{{ docker_hub_username }}\",\"password\":\"{{ docker_hub_password }}\"}}" >> /etc/ecs/ecs.config
 echo ECS_CONTAINER_STOP_TIMEOUT=60s >> /etc/ecs/ecs.config
-echo "{{ ecs_nginx_conf_b64 }}" | base64 --decode > /etc/ecs/nginx.template
+echo "{{ var.nginx_conf_b64 }}" | base64 --decode > /etc/ecs/nginx.template
 EOF
   iam_instance_profile = "${aws_iam_instance_profile.container_instance.name}"
   security_groups             = ["${aws_security_group.this.id}"]
@@ -33,7 +33,7 @@ EOF
 
   ebs_block_device {
     device_name           = "/dev/xvdcz"
-    volume_size           = "{{ ecs_block_device_size }}"
+    volume_size           = "{{ var.block_device_size }}"
     volume_type           = "gp2"
     delete_on_termination = true
   }
@@ -53,9 +53,9 @@ resource "aws_autoscaling_group" "ecs" {
   {% endif %}
 
   launch_configuration = "${aws_launch_configuration.ecs.name}"
-  min_size             = "{{ ecs_min_size }}"
-  max_size             = "{{ ecs_max_size }}"
-  desired_capacity     = "{{ ecs_desired_capacity }}"
+  min_size             = "{{ var.min_size }}"
+  max_size             = "{{ var.max_size }}"
+  desired_capacity     = "{{ var.desired_capacity }}"
   termination_policies = ["OldestLaunchConfiguration", "ClosestToNextInstanceHour", "Default"]
   target_group_arns = ["${aws_alb_target_group.this.arn}"]
 

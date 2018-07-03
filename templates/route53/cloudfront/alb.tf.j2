@@ -1,6 +1,6 @@
-{% if cloudfront_s3_origins is defined and cloudfront_s3_origins %}
+{% if var.s3_origins is defined and var.s3_origins %}
 
-{% include './templates/aws_policies/static_iam_user_policy.tf.j2' %}
+{% include 's3/policy/static_iam_user_policy.tf.j2' %}
 
 
 resource "aws_iam_policy" "site_deployer_policy" {
@@ -97,7 +97,7 @@ resource "aws_cloudfront_distribution" "this" {
       }
 
   }
-{% if cloudfront_s3_origins is defined and cloudfront_s3_origins %}
+{% if var.s3_origins is defined and var.s3_origins %}
 origin {
     origin_id   = "s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
     domain_name = "${aws_s3_bucket.s3.bucket_domain_name}"
@@ -105,7 +105,7 @@ origin {
         origin_access_identity = ""
     }
 }
-{% for origin in cloudfront_s3_origins %}
+{% for origin in var.s3_origins %}
  ordered_cache_behavior {
     path_pattern     = "{{ origin.path_pattern }}"
     allowed_methods  = {{ origin.allowed_methods | replace('\'', '\"') | replace('u', '') }}
@@ -127,12 +127,12 @@ origin {
 {% endif %}
   enabled = true
 
-  default_root_object = "{{ cloudfront_default_root_object }}"
+  default_root_object = "{{ var.cloudfront_default_root_object }}"
 
 {% if project_deployment_environment == 'prod' %}
-  aliases = ["{{ project_deployment_environment }}.{{ domain_url }}"]
+  aliases = ["{{ project_deployment_environment }}.{{ domain_name }}"]
 {% else %}
-  aliases = ["{{ project_deployment_environment }}.{{ domain_url }}"]
+  aliases = ["{{ project_deployment_environment }}.{{ domain_name }}"]
 {% endif %}
 
   default_cache_behavior {

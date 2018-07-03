@@ -1,15 +1,15 @@
 resource "aws_route53_record" "rds" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
 {% if project_deployment_environment == 'prod' %}
-  name = "rds.{{ domain_url }}"
+  name = "rds.{{ domain_name }}"
 {% else %}
-  name = "rds.{{ project_deployment_environment }}.{{ domain_url }}"
+  name = "rds.{{ project_deployment_environment }}.{{ domain_name }}"
 {% endif %}
   type = "CNAME"
 
   ttl = 300
 
-{% if project_zone_rds_cluster == true %}
+{% if var.cluster == true %}
   records = ["${aws_rds_cluster.default.endpoint}"]
 {% else %}
   records = ["${aws_db_instance.default.address}"]
@@ -17,14 +17,14 @@ resource "aws_route53_record" "rds" {
 
 }
 
-{% if project_zone_rds_cluster == true %}
+{% if var.cluster == true %}
 
 resource "aws_route53_record" "rds_reader" {
   zone_id = "${data.aws_route53_zone.selected.zone_id}"
 {% if project_deployment_environment == 'prod' %}
-  name = "ro.rds.{{ domain_url }}"
+  name = "ro.rds.{{ domain_name }}"
 {% else %}
-  name = "ro.rds.{{ project_deployment_environment }}.{{ domain_url }}"
+  name = "ro.rds.{{ project_deployment_environment }}.{{ domain_name }}"
 {% endif %}
   type = "CNAME"
 

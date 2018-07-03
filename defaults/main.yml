@@ -12,21 +12,120 @@ project_name: "name"
 project_deployment_environment: "env"
 cloudfront_s3_origins:
 
-project_s3: false
-project_ecs: false
-project_eks: false
-project_alb: false
-project_iam: false
-project_rds: false
-project_rds_cluster: false
-project_elasticache: false
+primitive:
+  # - s3: website_bucket
+  # - ecs:
+  #     var:
+  #       ssh_public_key: "{{ '~/.ssh/id_rsa.pub' | expanduser }}"
+  # - eks:
+  #     var:
+  #       ingress:
+  #         - from_port: 443
+  #           to_port: 443
+  #           protocol: tcp
+  #           cidr_blocks:
+  #           - 185.41.248.158/32
+  # - rds:
+  #     var: &rds_config
+  #       db_name: database_name
+  #       db_username: database_user
+  #       db_password: secret
+  # # - rds:
+  # #     var:
+  # #       db_name: database_name
+  # #       db_username: database_user
+  # #       db_password: secret
+  # #       cluster: true
+  # #       route53: true
+  # - alb: true
+  # - iam: true
+  # - elasticache: true
+  # - lambda: login
+  # - cloudflare:
+  #   var:
+  #     rds: *rds_config
+  #     elasticache: false
+  # - route53:
+  #     var:
+  #       alb: true
+  #       s3: true
+
+
+
+
+
+
+default:
+  s3:
+    var:
+      bucket_name: tf-s3-test
+      bucket_policy_path: s3/policy/static_iam_user_policy.tf.j2
+      lambda: false
+  ecs:
+    var:
+      min_size: 0
+      max_size: 1
+      desired_capacity: 1
+      instance_type: t2.micro
+      block_device_size: 22
+      nginx_conf_b64: ""
+      ingress: []
+    templates:
+      - templates/ecs/main.tf.j2
+      - templates/ecs/security_groups.tf.j2
+  eks:
+    name: eks_cluster
+    var:
+      cluster_name: default
+      instance_type: t2.micro
+      min_size: 1
+      max_size: 2
+      desired_capacity: 2
+      ingress: []
+  rds:
+    name: rds_instance
+    var:
+      instance_type: db.t2.micro
+      engine: mysql
+      engine_version: "5.6.37"
+      allocated_storage_size: 10
+      storage_type: gp2
+      cluster: false
+      route53: false
+      skip_final_snapshot: false
+    tf:
+      count: 2
+    templates:
+      - rds/main.tf.j2
+      - rds/route53.tf.j2
+  alb:
+    var:
+      ingress: []
+    templates:
+      - alb/main.tf.j2
+      - alb/security_groups.tf.j2
+  elasticache:
+    var:
+      num_cache_nodes: 1
+      port: 6379
+      parameter_group_name:
+      engine: redis
+      node_type: cache.t2.small
+      route53: false
+
+
+# project_s3: false
+# project_ecs: false
+# project_eks: false
+# project_alb: false
+# project_iam: false
+# project_rds: false
+# project_rds_cluster: false
+# project_elasticache: false
 project_env_zone: "example.com"
 project_zone_cloudflare: false
 project_zone_rds_cluster: false
-project_cloudfront_for_alb: false
-project_cloudfront_for_s3: false
 project_zone_route53: false
-project_lambda: false
 
 main_dns_record_create: true
 skip_env_domain_prefix: false
@@ -34,32 +133,7 @@ skip_project_name_domain_prefix: false
 
 cloudfront_default_root_object: ""
 
-s3_bucket_name: "tf-s3-test"
-s3_bucket_policy_name: "test_iam_user_policy.json.j2"
 iam_user_policy_name: "test_s3_bucket_policy.json.j2"
-
-eks_min_size: 1
-eks_max_size: 2
-eks_desired_capacity: 2
-eks_instance_type: "m4.large"
-
-ecs_min_size: 0
-ecs_max_size: 1
-ecs_desired_capacity: 1
-ecs_instance_type: "t2.micro"
-ecs_block_device_size: 22
-ecs_nginx_conf_b64: ""
-
-db_instance_type: "db.t2.micro"
-db_engine: "mysql"
-db_engine_version: "5.6.37"
-db_allocated_storage_size: 10
-
-elasticache_engine: "redis"
-elasticache_node_type: "cache.t2.small"
-elasticacheport: 6379
-elasticache_num_cache_nodes: 1
-elasticache_parameter_group_name: "default.redis3.2"
 
 db_skip_final_snapshot: true
 

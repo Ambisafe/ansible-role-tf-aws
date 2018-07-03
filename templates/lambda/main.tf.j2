@@ -1,4 +1,4 @@
-resource "aws_lambda_function" "login" {
+resource "aws_lambda_function" "{{ name }}" {
 
   filename         = "{{ project_type }}-{{ project_name }}-login.zip"
   function_name    = "{{ project_type }}-{{ project_name }}-login"
@@ -18,3 +18,4 @@ resource "aws_lambda_function" "login" {
   }
 
 }
+

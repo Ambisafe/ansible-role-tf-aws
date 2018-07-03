@@ -1,6 +1,6 @@
 provider "cloudflare" {
-  email = "{{ cloudflare_email }}"
-  token = "{{ cloudflare_access_token }}"
+  email = "{{ cloudflare_email | default(var.email) }}"
+  token = "{{ cloudflare_access_token | default(var.access_token)}}"
 }
 
 resource "cloudflare_record" "this" {
@@ -9,9 +9,9 @@ resource "cloudflare_record" "this" {
 {% endif %}
   domain = "{{ project_env_zone }}"
 {% if project_deployment_environment == 'prod' or skip_env_domain_prefix == true %}
-  name = "{{ domain_url }}"
+  name = "{{ domain_name }}"
 {% else %}
-  name = "{{ project_deployment_environment }}.{{ domain_url }}"
+  name = "{{ project_deployment_environment }}.{{ domain_name }}"
 {% endif %}
 {% if project_cloudfront_for_alb == true %}
   value  = "${aws_cloudfront_distribution.this.domain_name}"
@@ -22,13 +22,25 @@ resource "cloudflare_record" "this" {
   type   = "CNAME"
   ttl    = 300
 }
-
-{% if project_rds == true %}
-  {% include './templates/cloudflare_rds.tf.j2' %}
+{% if var.rds is defined %}
+    {% set rds = var.rds %}
+{% else %}
+    {% set rds = {} %}
 {% endif %}
 
-{% if project_elasticache == true %}
-  {% include './templates/cloudflare_elasticache.tf.j2' %}
+{% if rds.get('cloudflare', False) == True %}
+    {% include 'rds/cloudflare.tf.j2' %}
+{% endif %}
+
+
+{% if var.elasticache is defined %}
+    {% set elasticache = var.elasticache %}
+{% else %}
+    {% set elasticache = {} %}
+{% endif %}
+
+{% if elasticache.get('cloudflare', False) == True %}
+    {% include 'elasticache/cloudflare.tf.j2' %}
 {% endif %}
 
 resource "cloudflare_record" "cert_default" {
@@ -51,14 +63,14 @@ resource "cloudflare_record" "cert_default" {
 {% if aws_region != 'us-east-1' %}
 resource "aws_acm_certificate" "us-east-1" {
   provider = "aws.us-east-1"
-  domain_name = "{{ domain_url }}"
+  domain_name = "{{ domain_name }}"
   subject_alternative_names = ["*.{{ project_name }}.{{ project_env_zone }}"]
   validation_method = "DNS"
 }
 {% endif %}
 
 resource "aws_acm_certificate" "default" {
-  domain_name = "{{ domain_url }}"
+  domain_name = "{{ domain_name }}"
   subject_alternative_names = ["*.{{ project_name }}.{{ project_env_zone }}"]
   validation_method = "DNS"
 }
