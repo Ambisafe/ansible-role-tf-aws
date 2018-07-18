@@ -288,7 +288,7 @@ resource "aws_autoscaling_group" "kube" {
   launch_configuration = "${aws_launch_configuration.kube.id}"
   max_size             = "{{ eks_max_size }}"
   min_size             = "{{ eks_min_size }}"
-  name                 = "tf-eks-kube"
+  name                 = "${var.cluster-name}"
   {% if aws_vpc_default == true %}
         vpc_zone_identifier  = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}", "${aws_default_subnet.c.id}"]
   {% else %}
