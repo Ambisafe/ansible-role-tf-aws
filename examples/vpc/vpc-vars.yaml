@@ -1,0 +1,5 @@
+organization_name: ambisafe
+project_name: cluster
+project_type: infrastructure
+project_deployment_environment: develop
+aws_region: us-west-2

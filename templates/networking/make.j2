@@ -1,0 +1,46 @@
+{% set network = namespace(filter={}) %}
+{% if var.vpc_id is undefined %}
+vpc-id-{{ name }}:=$(shell echo { default: {{ var.default }}, region: {{ var.region }}, cidr: {{ var.cidr }} } | python3 helpers/filter-first-vpc.py)
+{% else %}
+vpc-id-{{ name }}="{{ var.vpc_id }}"
+{% endif %}
+vpc-cidr-{{ name }}=$(shell aws ec2 --region={{var.region}} describe-vpcs --vpc-ids ${vpc-{{name}}{%raw%}}{%endraw%} --output=text --query='Vpcs[0].CidrBlockAssociationSet[0].CidrBlock')
+tf-import-{{name}}-vpc:
+	@[ "${%raw%}{{%endraw%}vpc-id-{{name}}{%raw%}}{%endraw%}" != "null" ] && terraform import aws{% if var.default %}_default{%endif%}_vpc.{{name}} ${%raw%}{{%endraw%}vpc-id-{{name}}{%raw%}}{%endraw%} || true
+
+tf-import-{{name}}-subnets: tf-import-{{name}}-vpc
+{% if var.availability_zones is defined %}
+{% set availability_zones = var.availability_zones %}
+{% else %}
+{% set availability_zones = aws_availability_zones[aws_region] %}
+{% endif %}
+{% for az in availability_zones %}
+{% for reachability in tf_variable.reachabilities.default %}
+{% if availability_zones[az] is mapping and availability_zones[az].get(reachability, None) %}
+{% set subnet = availability_zones[az][reachability] %}
+{% else %}
+{% set subnet = "null" %}
+{% endif %}
+{% if '-' in subnet %}
+{% set network.filter = dict(network.filter.items(), **{'-'.join([name, az, reachability]): subnet }) %}
+{% else %}
+{% set network.filter = dict(network.filter.items(), **{'-'.join([name, az, reachability]): "{{region: {region}, az: {az}, reachability: {reachability}, subnet: {subnet}, personalization: {personalization}, digest_size: 2, subnet_size: 24 }}".format(personalization=''.join(var.personalization | sort), az=az, subnet=subnet, region=var.region, reachability=reachability)})%}
+{% endif %}
+	@echo "{{name}}-{{az}}-{{reachability}}-cidr = \"${%raw%}{{%endraw%}{{name}}-{{az}}-{{reachability}}-default-cidr}\"" > {{name}}-{{az}}-{{reachability}}-cidr.auto.tfvars
+
+	[ "${%raw%}{{%endraw%}{{name}}-{{az}}-{{reachability}}{%raw%}}{%endraw%}" != "null" ] && terraform import aws_subnet.{{name}}-{{az}}-{{reachability}} {%raw%}${{% endraw %}{{name}}-{{az}}-{{reachability}}{%raw%}}{%endraw%} || true
+{% endfor %}
+{% endfor %}
+
+{% for subnet_name, filter in network.filter.items() %}
+{% if '{' in filter %}
+{{subnet_name}}-default-cidr:=$(shell echo {{ filter }} | python3 helpers/generate-default-subnet-cidr.py ${vpc-cidr-{{name}}{%raw%}}{%endraw%})
+{{subnet_name}}:=$(shell echo {{ filter }} | python3 helpers/filter-first-subnet.py ${vpc-id-{{name}}{%raw%}}{%endraw%} ${%raw%}{{%endraw%}{{subnet_name}}-default-cidr})
+{% else %}
+{{subnet_name}}:="{{ filter }}"
+{% endif %}
+{% endfor %}
+
+tf-import-{{name}}-networking: tf-import-{{name}}-subnets
+
+tf-import-networking-sections:=$(shell echo ${tf-import-sections} tf-import-{{name}}-networking)

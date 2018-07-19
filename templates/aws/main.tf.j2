@@ -1,0 +1,4 @@
+provider "aws" {
+    region = "{% if var.region is defined %}{{ var.region }}{% else %}{{name}}{% endif %}"
+    alias = "{{ name }}"
+}

@@ -1,20 +1,7 @@
 ---
-- assert:
-    that:
-      - "aws_vpc_id is defined"
-      - "aws_vpc_id != ''"
-    msg: "AMBISAFE AWS_VPC_ID is not defined"
-  when: "aws_vpc_default == 'False'"
-  tags: configuration
-
-- assert:
-    that:
-      - "aws_subnet_id_a is defined"
-      - "aws_subnet_id_b is defined"
-      - "aws_subnet_id_c is defined"
-      - "aws_vpc_id != ''"
-    msg: "AMBISAFE AWS_SUBNET_ID is not defined"
-  when: "aws_vpc_default == 'False'"
+- include_vars:
+    file: vars/availability-zones.yml
+    name: aws_availability_zones
   tags: configuration
 
 # got terraform infrastructures for aws
@@ -37,10 +24,34 @@
     force: yes
   tags: configuration
 
-- name: Create TF files
+- name: Create TF main
   template:
     src: main.tf.j2
     dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/main.tf"
+  tags: configuration
+
+- name: Create TF variables
+  template:
+    src: variables.tf.j2
+    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/variables.tf"
+  tags: configuration
+
+- name: Create TF outputs
+  template:
+    src: outputs.tf.j2
+    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/outputs.tf"
+  tags: configuration
+
+- name: Create requirements.txt
+  template:
+    src: requirements.txt.j2
+    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/requirements.txt"
+  tags: configuration
+
+- name: Create makefile
+  template:
+    src: Makefile.j2
+    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/Makefile"
   tags: configuration
 
 # run terraform init
@@ -61,13 +72,21 @@
   tags: configuration
 
 #run terraform plan
+- name: Import networking
+  shell: make tf-import-networking
+  environment:
+    AWS_DEFAULT_REGION: "{{ aws_region }}"
+  args:
+    chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
+  tags: state
+
 - name: Run the terraform plan
   command: "terraform plan -no-color {{ terraform_arg }}"
   args:
     chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
   environment:
     AWS_DEFAULT_REGION: "{{ aws_region }}"
-  tags: configuration
+  tags: state
 
 #run terraform apply -auto-approve
 - name: Run the installation on AWS

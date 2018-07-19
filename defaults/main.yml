@@ -7,24 +7,16 @@ aws_subnet_id_a : ""
 aws_subnet_id_b : ""
 aws_subnet_id_c : ""
 
-project_type: "project"
-project_name: "name"
-project_deployment_environment: "env"
+
 cloudfront_s3_origins:
 
-primitive:
+tf_primitive:
   # - s3: website_bucket
   # - ecs:
   #     var:
   #       ssh_public_key: "{{ '~/.ssh/id_rsa.pub' | expanduser }}"
   # - eks:
-  #     var:
-  #       ingress:
-  #         - from_port: 443
-  #           to_port: 443
-  #           protocol: tcp
-  #           cidr_blocks:
-  #           - 185.41.248.158/32
+  #     name: review
   # - rds:
   #     var: &rds_config
   #       db_name: database_name
@@ -50,12 +42,11 @@ primitive:
   #       alb: true
   #       s3: true
 
+project_name: name
+project_type: project
+project_deployment_environment: develop
 
-
-
-
-
-default:
+tf_primitive_default:
   s3:
     var:
       bucket_name: tf-s3-test
@@ -71,12 +62,11 @@ default:
       nginx_conf_b64: ""
       ingress: []
     templates:
-      - templates/ecs/main.tf.j2
-      - templates/ecs/security_groups.tf.j2
+      - ecs/main.tf.j2
+      - ecs/security_groups.tf.j2
   eks:
-    name: eks_cluster
+    name: cluster
     var:
-      cluster_name: default
       instance_type: t2.micro
       min_size: 1
       max_size: 2
@@ -112,6 +102,27 @@ default:
       engine: redis
       node_type: cache.t2.small
       route53: false
+  networking:
+    var:
+      default: true
+      cidr: 172.30.0.0/16
+      region: "{{ aws_region }}"
+      personalization:
+        - "{{ organization_name }}"
+    tags:
+      organization: "{{ organization_name }}"
+      deployment_environment: "{{ project_deployment_environment }}"
+    tf:
+      lifecycle:
+        prevent_destroy: true
+        ignore_changes:
+          - tags
+
+tf_variable_defaults:
+  reachabilities:
+    default:
+      - private
+      - public
 
 
 # project_s3: false
@@ -140,5 +151,3 @@ db_skip_final_snapshot: true
 terraform_dir: "/opt/terraform"
 terraform_arg: ""
 terraform_data_dir: "/opt/terraform/data"
-
-

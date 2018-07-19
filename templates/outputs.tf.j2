@@ -1,0 +1,24 @@
+{% macro define_tf_output(name, value=None, description=None, depends_on=None, sensitive=None) -%}
+output "{{ name }}" {
+    value = {{ value | to_json }}
+{% if description != None %}
+    description = {{ description | to_json }}
+{% endif %}
+{% if depends_on != None %}
+    depends_on = {{ depends_on | to_json }}
+{% endif %}
+{% if sensitive != None %}
+    sensitive = {{ sensitive | to_json }}
+{% endif %}
+}
+{%- endmacro %}
+
+{% if tf_output is defined %}
+{% for name, declaration in tf_output.items() %}
+{% if declaration is not mapping %}
+{{ define_tf_output(name, value=declaration) }}
+{% else %}
+{{ define_tf_output(name, **declaration) }}
+{% endif %}
+{% endfor %}
+{% endif %}

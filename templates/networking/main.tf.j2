@@ -1,0 +1,50 @@
+{% if var.default %}
+resource "aws_default_vpc" "{{ name }}"
+{%- else %}
+resource "aws_vpc" "{{ name }}"
+{% endif %}
+{
+  {% if not var.default %}cidr_block = "{{ var.cidr }}"{% endif %}
+  {% include 'tags.tf.j2' %}
+  {% include 'resource.tf.j2' %}
+}
+data "aws_vpc" "{{ name }}" {
+  id = "${aws{% if var.default %}_default{% endif %}_vpc.{{name}}.id}"
+}
+
+output "vpc-{{name}}" {
+    value = "${data.aws_vpc.{{name}}.id}"
+}
+
+{% if var.availability_zones is defined %}
+{% set availability_zones = var.availability_zones %}
+{% else %}
+{% set availability_zones = aws_availability_zones[aws_region] %}
+{% endif %}
+
+{% for az in availability_zones %}
+{% for reachability in tf_variable.reachabilities.default %}
+variable "{{name}}-{{az}}-{{reachability}}-cidr" {
+}
+resource "aws_subnet" "{{name}}-{{az}}-{{reachability}}" {
+  cidr_block = "${var.{{name}}-{{az}}-{{reachability}}-cidr}"
+  vpc_id = "${data.aws_vpc.{{name}}.id}"
+  availability_zone = "{{var.region}}{{az}}"
+  {% if reachability.startswith("public") -%}
+  map_public_ip_on_launch = true
+  {% else -%}
+  map_public_ip_on_launch = false
+  {% endif -%}
+  {% with name='-'.join([name, az, reachability])%}
+  {% include "tags.tf.j2" %}
+  {% include 'resource.tf.j2' %}  
+  {% endwith %}
+}
+
+output "subnet-{{name}}-{{az}}-{{reachability}}"{
+  value = "${aws_subnet.{{name}}-{{az}}-{{reachability}}.id}"
+}
+
+{% endfor %}
+{% endfor %}
+

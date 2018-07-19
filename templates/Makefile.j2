@@ -3,10 +3,10 @@
 {% set var=namespace(**dict(tf_primitive_default.get(primitive_name, {}).get('var', {}).items() + primitive_config.get('var', {}).items())) -%}
 {% set tag=namespace(items = dict(tf_primitive_default.get(primitive_name, {}).get('tags', {}).items() + primitive_config.get('tags', {}).items()).items()) -%}
 {% set name=primitive_config.get('name', tf_primitive_default.get(primitive_name, {}).get('name', primitive_index)) -%}
-{% set templates=primitive_config.get('templates', tf_primitive_default.get(primitive_name, {}).get('templates', [primitive_name + '/main.tf.j2',])) -%}
+{% set templates=primitive_config.get('make', tf_primitive_default.get(primitive_name, {}).get('make', [primitive_name + '/make.j2',])) -%}
 {% for template in templates -%}
 
-{% include template with context %}
+{% include template ignore missing with context %}
 
 {% endfor -%}
 {%- endmacro %}
@@ -17,7 +17,7 @@
 {% endif %}
 
 ##### begin:header
-{% include 'header.tf.j2' %}
+{% include 'header.make.j2' ignore missing %}
 ##### end:header
 {% for primitive_dict in tf_primitive -%}
 {% set primitive_index = loop.index | to_json -%}
@@ -34,5 +34,6 @@
 {% endfor -%}
 {% endfor %}
 ##### begin:footer
-{% include 'footer.tf.j2' %}
+{% include 'footer.make.j2' ignore missing %}
+
 ##### end:footer

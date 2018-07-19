@@ -1,0 +1,19 @@
+{% macro define_tf_variable(name, description=None, default={}, type=None) -%}
+variable "{{ name }}" {
+{% if description != None %}
+    description = {{ description | to_json }}
+{% endif %}
+{% if type != None %}
+    type = {{ type | to_json }}
+{% endif %}
+{% if default != None %}
+    default = {{ default | to_json }}
+{% endif %}
+}
+{%- endmacro %}
+
+{% if tf_variable is defined %}
+{% for name, declaration in tf_variable.items() %}
+{{ define_tf_variable(name, **declaration) }}
+{% endfor %}
+{% endif %}

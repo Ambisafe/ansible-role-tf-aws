@@ -1,0 +1,64 @@
+- name: testing role inventory
+  hosts: localhost
+  gather_facts: false
+  vars:
+    terraform_dir: "/tmp/tf/config"
+    terraform_data_dir: "/tmp/tf/data"
+    default_tags: &default_tags
+      project_name: "${var.project_name}"
+      project_type: "${var.project_type}"
+      project_deployment_environment: "${var.project_deployment_environment}"
+      organization_name: "${var.organization_name}"
+    tf_variable:
+      project_name:
+        default: "{{ project_name }}"
+      project_type:
+        default: "{{ project_type }}"
+      project_deployment_environment:
+        default: "{{ project_deployment_environment }}"
+      organization_name:
+        default: "{{ organization_name }}"
+      reachabilities:
+        description: list of reachability zones. WARNING! change this list only on `ansible-role-tf-aws` call
+        default:
+          - private
+          - public
+
+    tf_primitive:
+      - aws: "{{ aws_region }}"
+      - networking: default
+        # all availability zones used
+        # private and public networks created in each
+        # network addreses generated with hash digest according to [organization_name, region, az, reachibility]
+        # default vpc cidr used for generated names
+      # - networking:
+      #     name: non_default_vpc_with_default_cidr
+      #     var:
+      #       region: "{{ aws_region }}"
+      #       default: false
+      # - networking:
+      #     name: non_default_vpc_with_nondefault_cidr
+      #     var:
+      #       region: "{{ aws_region }}"
+      #       default: false
+      #       cidr: 12.0.0.0/8
+      # - networking: 
+      #     name: default_with_limited_set_of_availability_zones
+      #     var:
+      #       availability_zones:
+      #         - a
+      #         - b
+      # - networking: 
+      #     name: defaultz
+      #     var:
+      #       availability_zones:
+      #         a:
+      #           private: 172.31.202.0/24
+      #           public: 172.31.202.0/24
+      #         # b: 
+      #         #   private: 172.31.202.0/24
+      #         # c: 
+      #         #   public: 172.31.204.0/24
+    
+  roles:
+    - { role: ansible-role-tf-aws }
