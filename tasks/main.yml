@@ -2,7 +2,15 @@
 - include_vars:
     file: vars/availability-zones.yml
     name: aws_availability_zones
-  tags: configuration
+  tags:
+    - configuration
+    - state
+- include_vars:
+    file: vars/cluster-hostnames.yml
+    name: cluster_hostnames
+  tags:
+    - configuration
+    - state
 
 # got terraform infrastructures for aws
 - name: Create terraform data directory

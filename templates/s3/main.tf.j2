@@ -1,13 +1,12 @@
 resource "aws_s3_bucket" "{{name}}" {
   
-  provider = "aws.{{ aws_region }}"
+  provider = "aws.{{aws_region}}"
   bucket   = "{{ var.bucket_name }}"
-  
   website {
     index_document = "index.html"
   }
   {% include "resource.tf.j2" %}
-  {% include "resource.tf.j2" %}  
+  {% include "tags.tf.j2" %}
   policy  = <<EOF
 {
     "Version": "2012-10-17",
@@ -55,7 +54,7 @@ EOF
 
 resource "aws_iam_policy" "site_deployer_policy" {
   provider    = "aws.{{ aws_region }}"
-  name        = "deployer.{{ organization_name }}.{{ project_type }}.{{ project_name }}.{{ project_deployment_environment }}"
+  name        = "deployer.${var.organization_name}.${var.project_type}.${var.project_name}.${var.project_deployment_environment}"
   path        = "/"
   description = "Policy allowing to publish a new version of the website to the S3 bucket"
   policy      = "${data.aws_iam_policy_document.user.json}"
@@ -69,7 +68,7 @@ resource "aws_iam_policy_attachment" "site-deployer-attach-user-policy" {
 }
 
 resource "aws_iam_user" "deployer" {
-  name = "deploy@{{ project_type }}.{{ project_name }}.{{ project_deployment_environment }}"
+  name = "deploy@${var.project_type}.${var.project_name}.${var.project_deployment_environment}"
   path = "/"
 }
 

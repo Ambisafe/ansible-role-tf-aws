@@ -64,14 +64,6 @@ tf_primitive_default:
     templates:
       - ecs/main.tf.j2
       - ecs/security_groups.tf.j2
-  eks:
-    name: cluster
-    var:
-      instance_type: t2.micro
-      min_size: 1
-      max_size: 2
-      desired_capacity: 2
-      ingress: []
   rds:
     name: rds_instance
     var:
@@ -102,6 +94,14 @@ tf_primitive_default:
       engine: redis
       node_type: cache.t2.small
       route53: false
+  eks:
+    var:
+      instance_type: t2.micro
+      ingress: []
+      networking: default
+      region: "{{ aws_region }}"
+      consul_domain: "{{ project_env_zone }}"
+      workers_per_zone: 1
   networking:
     var:
       default: true
@@ -111,7 +111,7 @@ tf_primitive_default:
         - "{{ organization_name }}"
     tags:
       organization: "{{ organization_name }}"
-      deployment_environment: "{{ project_deployment_environment }}"
+      environment: "{{ project_deployment_environment }}"
     tf:
       lifecycle:
         prevent_destroy: true

@@ -1,13 +1,11 @@
-variable "cluster-name" {
-  default = "{{ var.cluster_name }}"
-  type    = "string"
-}
-
 ########### EKS Master Cluster IAM Role
-
-resource "aws_iam_role" "kube-cluster" {
-  name = "${var.cluster-name}"
-
+{% if var.availability_zones is defined %}
+{% set availability_zones = var.availability_zones %}
+{% else %}
+{% set availability_zones = aws_availability_zones[var.region] %}
+{% endif %}
+resource "aws_iam_role" "kube-cluster-{{name}}" {
+  name = "{{ name }}"
   assume_role_policy = <<POLICY
 {
   "Version": "2012-10-17",
@@ -24,26 +22,22 @@ resource "aws_iam_role" "kube-cluster" {
 POLICY
 }
 
-resource "aws_iam_role_policy_attachment" "kube-cluster-AmazonEKSClusterPolicy" {
+resource "aws_iam_role_policy_attachment" "kube-cluster-{{name}}-AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = "${aws_iam_role.kube-cluster.name}"
+  role       = "{{ "${aws_iam_role.kube-cluster-" + name + ".name}" }}"
 }
 
-resource "aws_iam_role_policy_attachment" "kube-cluster-AmazonEKSServicePolicy" {
+resource "aws_iam_role_policy_attachment" "kube-cluster-{{name}}-AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-  role       = "${aws_iam_role.kube-cluster.name}"
+  role       = "{{ "${aws_iam_role.kube-cluster-" + name + ".name}" }}"
 }
 
 ###########  EKS Master Cluster Security Group
-
-resource "aws_security_group" "kube-cluster" {
-  name        = "${var.cluster-name}"
-  description = "Cluster communication with worker nodes"
-{% if aws_vpc_default == true %}
-  vpc_id = "${aws_default_vpc.this.id}"
-{% else %}
-  vpc_id = "{{ aws_vpc_id }}"
-{% endif %}
+ 
+resource "aws_security_group" "kube-cluster-{{name}}" {
+  name        = "{{ name }}"
+  description = "{{ name }} cluster communication with worker nodes"
+  vpc_id = "${data.aws_vpc.{{var.networking}}.id}"
 
 {% for ingress in var.ingress %}
   ingress {
@@ -61,30 +55,23 @@ resource "aws_security_group" "kube-cluster" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
-    Name = "${var.cluster-name}"
-  }
+  {% include "tags.tf.j2" %}
 }
 
 ########## EKS Master Cluster
 
-resource "aws_eks_cluster" "kube" {
-  name            = "${var.cluster-name}"
-  role_arn        = "${aws_iam_role.kube-cluster.arn}"
+resource "aws_eks_cluster" "{{name}}" {
+  name            = "{{ name }}"
+  role_arn        = "{{ "${aws_iam_role.kube-cluster-" + name + ".arn}" }}"
 
   vpc_config {
-    security_group_ids = ["${aws_security_group.kube-cluster.id}"]
-  {% if aws_vpc_default == true %}
-        subnet_ids  = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}", "${aws_default_subnet.c.id}"]
-  {% else %}
-        subnet_ids  = ["{{ aws_subnet_id_a }}", "{{ aws_subnet_id_b }}" , "{{ aws_subnet_id_c }}"]
-  {% endif %}
-
+    security_group_ids = ["{{ "${aws_security_group.kube-cluster-" + name + ".id}" }}"]
+    subnet_ids  = [{% for az in availability_zones%}"${aws_subnet.{{ var.networking }}-{{az}}-private.id}", {%endfor%}]
   }
 
   depends_on = [
-    "aws_iam_role_policy_attachment.kube-cluster-AmazonEKSClusterPolicy",
-    "aws_iam_role_policy_attachment.kube-cluster-AmazonEKSServicePolicy",
+    "aws_iam_role_policy_attachment.kube-cluster-{{name}}-AmazonEKSClusterPolicy",
+    "aws_iam_role_policy_attachment.kube-cluster-{{name}}-AmazonEKSServicePolicy",
   ]
 }
 
@@ -97,12 +84,12 @@ locals {
 apiVersion: v1
 clusters:
 - cluster:
-    server: ${aws_eks_cluster.kube.endpoint}
-    certificate-authority-data: ${aws_eks_cluster.kube.certificate_authority.0.data}
-  name: kubernetes
+    server: {{ "${aws_eks_cluster." + name + ".endpoint}" }}
+    certificate-authority-data: {{ "${aws_eks_cluster." + name + ".certificate_authority.0.data}" }}
+  name: {{ name }}
 contexts:
 - context:
-    cluster: kubernetes
+    cluster: {{ name }}
     user: aws
   name: aws
 current-context: aws
@@ -117,7 +104,7 @@ users:
       args:
         - "token"
         - "-i"
-        - "${var.cluster-name}"
+        - "{{ name }}"
 KUBECONFIG
 }
 
@@ -127,8 +114,8 @@ output "kubeconfig" {
 
 ########### Worker Node # IAM Role and Instance Profile
 
-resource "aws_iam_role" "kube-node" {
-  name = "${var.cluster-name}-node"
+resource "aws_iam_role" "kube-node-{{name}}" {
+  name = "{{ name }}-node"
 
   assume_role_policy = <<POLICY
 {
@@ -140,42 +127,48 @@ resource "aws_iam_role" "kube-node" {
         "Service": "ec2.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
+    },
+    {
+      "Effect": "Allow",
+      "Resource": "arn:aws:ec2:*",
+      "Action": [      
+        "ec2:DescribeInstances",
+        "ec2:DescribeTags",
+        "autoscaling:DescribeAutoScalingGroups"
+        ]
     }
   ]
 }
 POLICY
 }
 
-resource "aws_iam_role_policy_attachment" "kube-node-AmazonEKSWorkerNodePolicy" {
+resource "aws_iam_role_policy_attachment" "kube-node-{{name}}-AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = "${aws_iam_role.kube-node.name}"
+  role       = "{{ "${aws_iam_role.kube-node-" + name + ".name}" }}"
 }
 
-resource "aws_iam_role_policy_attachment" "kube-node-AmazonEKS_CNI_Policy" {
+
+resource "aws_iam_role_policy_attachment" "kube-node-{{name}}-AmazonEKS_CNI_Policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = "${aws_iam_role.kube-node.name}"
+  role       = "{{ "${aws_iam_role.kube-node-" + name + ".name}" }}"
 }
 
-resource "aws_iam_role_policy_attachment" "kube-node-AmazonEC2ContainerRegistryReadOnly" {
+resource "aws_iam_role_policy_attachment" "kube-node-{{name}}-AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = "${aws_iam_role.kube-node.name}"
+  role       = "{{ "${aws_iam_role.kube-node-" + name + ".name}" }}"
 }
 
-resource "aws_iam_instance_profile" "kube-node" {
-  name = "${var.cluster-name}-node"
-  role = "${aws_iam_role.kube-node.name}"
+resource "aws_iam_instance_profile" "kube-node-{{name}}" {
+  name = "{{ name }}-node"
+  role = "{{ "${aws_iam_role.kube-node-" + name + ".name}" }}"
 }
 
 ########### Worker Node # Security Group
 
-resource "aws_security_group" "kube-node" {
-  name        = "${var.cluster-name}-node"
-  description = "Security group for all nodes in the cluster"
-{% if aws_vpc_default == true %}
-  vpc_id = "${aws_default_vpc.this.id}"
-{% else %}
-  vpc_id = "{{ aws_vpc_id }}"
-{% endif %}
+resource "aws_security_group" "kube-node-{{name}}" {
+  name        = "kube-node-{{ name }}"
+  description = "Security group for all nodes in the cluster {{ name }}"
+  vpc_id = "${data.aws_vpc.{{var.networking}}.id}"
 
   egress {
     from_port   = 0
@@ -186,40 +179,41 @@ resource "aws_security_group" "kube-node" {
 
   tags = "${
     map(
-     "Name", "${var.cluster-name}-node",
-     "kubernetes.io/cluster/${var.cluster-name}", "owned",
+     "Name", "kube-node-{{ name }}",
+     "kubernetes.io/cluster/{{ name }}", "owned",
     )
   }"
 }
 
-resource "aws_security_group_rule" "kube-node-ingress-self" {
+resource "aws_security_group_rule" "kube-node-{{name}}-ingress-self" {
   description              = "Allow node to communicate with each other"
   from_port                = 0
   protocol                 = "-1"
-  security_group_id        = "${aws_security_group.kube-node.id}"
-  source_security_group_id = "${aws_security_group.kube-node.id}"
+  security_group_id        = "${aws_security_group.kube-node-{{name}}.id}"
+  source_security_group_id = "${aws_security_group.kube-node-{{name}}.id}"
   to_port                  = 65535
   type                     = "ingress"
 }
 
-resource "aws_security_group_rule" "kube-node-ingress-cluster" {
+resource "aws_security_group_rule" "kube-node-{{name}}-ingress-cluster" {
   description              = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
   from_port                = 1025
   protocol                 = "tcp"
-  security_group_id        = "${aws_security_group.kube-node.id}"
-  source_security_group_id = "${aws_security_group.kube-cluster.id}"
+
+  security_group_id        = "{{ "${aws_security_group.kube-node-" + name + ".id}" }}"
+  source_security_group_id = "{{ "${aws_security_group.kube-cluster-" + name + ".id}" }}"
   to_port                  = 65535
   type                     = "ingress"
 }
 
 ########### Worker Node # Access to EKS Master Cluster
 
-resource "aws_security_group_rule" "kube-cluster-ingress-node-https" {
+resource "aws_security_group_rule" "kube-cluster-{{name}}-ingress-node-https" {
   description              = "Allow pods to communicate with the cluster API Server"
   from_port                = 443
   protocol                 = "tcp"
-  security_group_id        = "${aws_security_group.kube-cluster.id}"
-  source_security_group_id = "${aws_security_group.kube-node.id}"
+  security_group_id        = "{{ "${aws_security_group.kube-node-" + name + ".id}" }}"
+  source_security_group_id = "{{ "${aws_security_group.kube-cluster-" + name + ".id}" }}"
   to_port                  = 443
   type                     = "ingress"
 }
@@ -228,16 +222,14 @@ resource "aws_security_group_rule" "kube-cluster-ingress-node-https" {
 data "aws_ami" "eks-worker" {
   filter {
     name   = "name"
-    values = ["eks-worker-*"]
+    values = ["ambisafe-amazon-linux-2-kube-worker-*"]
   }
 
   most_recent = true
-  owners      = ["602401143452"] # Amazon Account ID
 }
 
 # This data source is included for ease of sample architecture deployment
 # and can be swapped out as necessary.
-data "aws_region" "current" {}
 
 # EKS currently documents this required userdata for EKS worker nodes to
 # properly configure Kubernetes applications on the EC2 instance.
@@ -245,19 +237,32 @@ data "aws_region" "current" {}
 # information into the AutoScaling Launch Configuration.
 # More information: https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-06-05/amazon-eks-nodegroup.yaml
 locals {
-  kube-node-userdata = <<USERDATA
+  kube-node-{{name}}-userdata = <<USERDATA
 #!/bin/bash -xe
+CONSUL_HOSTNAME={{ cluster_hostnames["kube-worker"] }}-$(python -c 'import uuid; print(hex(uuid.getnode())[-6:])')
+ansible-playbook -e hostname=$$CONSUL_HOSTNAME /etc/ansible/set-hostname.yml
+ansible-playbook -e "{consul_datacenter: ${data.aws_region.current.name}, \
+                                      consul_domain: {{var.consul_domain}}, \
+                                      consul_acl_master_token: masterhyastertoken, \
+                                      consul_addr: 10.0.2.2, \
+                                      vault_master_token: vaulthyaulttoken, \
+                                      }" \
+                /etc/ansible/run-cluster-agent.yml
+ansible-playbook -e "{kubelet_id: $$CONSUL_HOSTNAME, \
+                                      kubelet_tags: [___name___,], \
+                                      consul_domain: {{var.consul_domain}} }" \
+                /etc/ansible/consul-kubelet-registration.yml
 
 CA_CERTIFICATE_DIRECTORY=/etc/kubernetes/pki
 CA_CERTIFICATE_FILE_PATH=$CA_CERTIFICATE_DIRECTORY/ca.crt
 mkdir -p $CA_CERTIFICATE_DIRECTORY
-echo "${aws_eks_cluster.kube.certificate_authority.0.data}" | base64 -d >  $CA_CERTIFICATE_FILE_PATH
+echo "{{ "${aws_eks_cluster." + name + ".certificate_authority.0.data}" }}" | base64 -d >  $CA_CERTIFICATE_FILE_PATH
 INTERNAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
-sed -i s,MASTER_ENDPOINT,${aws_eks_cluster.kube.endpoint},g /var/lib/kubelet/kubeconfig
-sed -i s,CLUSTER_NAME,${var.cluster-name},g /var/lib/kubelet/kubeconfig
+sed -i s,MASTER_ENDPOINT,{{ "${aws_eks_cluster." + name + ".endpoint}" }},g /var/lib/kubelet/kubeconfig
+sed -i s,CLUSTER_NAME,{{ name }},g /var/lib/kubelet/kubeconfig
 sed -i s,REGION,${data.aws_region.current.name},g /etc/systemd/system/kubelet.service
 sed -i s,MAX_PODS,20,g /etc/systemd/system/kubelet.service
-sed -i s,MASTER_ENDPOINT,${aws_eks_cluster.kube.endpoint},g /etc/systemd/system/kubelet.service
+sed -i s,MASTER_ENDPOINT,{{ "${aws_eks_cluster." + name + ".endpoint}" }},g /etc/systemd/system/kubelet.service
 sed -i s,INTERNAL_IP,$INTERNAL_IP,g /etc/systemd/system/kubelet.service
 DNS_CLUSTER_IP=10.100.0.10
 if [[ $INTERNAL_IP == 10.* ]] ; then DNS_CLUSTER_IP=172.20.0.10; fi
@@ -269,49 +274,66 @@ systemctl restart kubelet kube-proxy
 USERDATA
 }
 
-resource "aws_launch_configuration" "kube" {
+resource "aws_launch_configuration" "kube-{{name}}" {
   associate_public_ip_address = true
-  iam_instance_profile        = "${aws_iam_instance_profile.kube-node.name}"
+  iam_instance_profile        = "{{ "${aws_iam_instance_profile.kube-node-" + name + ".name}" }}"
   image_id                    = "${data.aws_ami.eks-worker.id}"
   instance_type               = "{{ var.instance_type }}"
-  name_prefix                 = "${var.cluster-name}"
-  security_groups             = ["${aws_security_group.kube-node.id}"]
-  user_data_base64            = "${base64encode(local.kube-node-userdata)}"
+  name_prefix                 = "{{ name }}"
+  security_groups             = ["{{ "${aws_security_group.kube-node-" + name + ".id}" }}"]
+  user_data_base64            = "{{ "${base64encode(local.kube-node-" + name + "-userdata)}" }}"
 
   lifecycle {
     create_before_destroy = true
   }
 }
 
-resource "aws_autoscaling_group" "kube" {
-  desired_capacity     = "{{ var.desired_capacity }}"
-  launch_configuration = "${aws_launch_configuration.kube.id}"
-  max_size             = "{{ var.max_size }}"
-  min_size             = "{{ var.min_size }}"
-  name                 = "tf-eks-kube"
-  {% if aws_vpc_default == true %}
-        vpc_zone_identifier  = ["${aws_default_subnet.a.id}", "${aws_default_subnet.b.id}", "${aws_default_subnet.c.id}"]
-  {% else %}
-        vpc_zone_identifier  = ["{{ aws_subnet_id_a }}", "{{ aws_subnet_id_b }}" , "{{ aws_subnet_id_c }}"]
-  {% endif %}
+resource "aws_placement_group" "kube-node-{{name}}" {
+    name = "kube-node-{{name}}"
+    strategy = "spread"
+}
+
+
+resource "aws_autoscaling_group" "kube-node-{{name}}" {
+  desired_capacity     = "{% if var.desired_capacity is defined %}{{ var.desired_capacity }}{% else %}${ {{ availability_zones | length }} * {{ var.workers_per_zone }} }{% endif %}"
+
+  launch_configuration = "{{ "${aws_launch_configuration.kube-" + name + ".id}" }}"
+  placement_group      = "{{ "${aws_placement_group.kube-node-" + name + ".id}" }}"
+  min_size             = {% if var.min_size is defined %}{{var.min_size}}{% else %}{{ availability_zones | length }}{% endif %}
+  max_size             = "{% if var.max_size is defined %}{{var.max_size}}{% else %}${ {{ availability_zones | length }} * {{ var.workers_per_zone }} }{% endif %}"
+  name                 = "kube-node-{{name}}"
+  vpc_zone_identifier  = [{% for az in availability_zones%}"${aws_subnet.{{ var.networking }}-{{az}}-private.id}", {%endfor%}]
 
   tag {
     key                 = "Name"
-    value               = "${var.cluster-name}"
+    value               = "kube-node-{{name}}"
     propagate_at_launch = true
   }
 
   tag {
-    key                 = "kubernetes.io/cluster/${var.cluster-name}"
+    key                 = "kubernetes.io/cluster/{{ name }}"
     value               = "owned"
+    propagate_at_launch = true
+  }
+  tag {
+    key                 = "consul_datacenter"
+    value               = "${data.aws_region.current.name}"
+    propagate_at_launch = true
+  }
+  tag {
+    key                 = "organization"
+    value               = "{{ organization_name }}"
+    propagate_at_launch = true
+  }
+  tag {
+    key                 = "environment"
+    value               = "{{ project_deployment_environment }}"
     propagate_at_launch = true
   }
 }
 
 locals {
   config-map-aws-auth = <<CONFIGMAPAWSAUTH
-{% raw %}
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -319,12 +341,12 @@ metadata:
   namespace: kube-system
 data:
   mapRoles: |
-    - rolearn: ${aws_iam_role.kube-node.arn}
-      username: system:node:{{EC2PrivateDNSName}}
+    - rolearn: "{{ "${aws_iam_role.kube-node-" + name + ".arn}" }}"
+      username: system:node:{% raw %}{{EC2PrivateDNSName}}{% endraw %}
+
       groups:
         - system:bootstrappers
         - system:nodes
-{% endraw %}
 CONFIGMAPAWSAUTH
 }
 
