@@ -12,95 +12,92 @@
     - configuration
     - state
 
-# got terraform infrastructures for aws
+- set_fact:
+    tf_dir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
+  tags:
+    - configuration
+    - state
+    - apply
+
 - name: Create terraform data directory
   file:
-    path: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
+    path: "{{ tf_dir }}"
     state: directory
   tags: configuration
 
-- name: Clean modules path
-  file:
-    state: absent
-    path: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/modules"
-  tags: configuration
+# - name: Clean modules path
+#   file:
+#     state: absent
+#     path: "{{ tf_dir }}/modules"
+#   tags: configuration
 
 - name: Copy terraform files to host
   copy:
     src: "terraform_files/"
-    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/"
+    dest: "{{ tf_dir }}/"
     force: yes
   tags: configuration
 
 - name: Create TF main
   template:
     src: main.tf.j2
-    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/main.tf"
+    dest: "{{ tf_dir }}/main.tf"
   tags: configuration
 
 - name: Create TF variables
   template:
     src: variables.tf.j2
-    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/variables.tf"
+    dest: "{{ tf_dir }}/variables.tf"
   tags: configuration
 
 - name: Create TF outputs
   template:
     src: outputs.tf.j2
-    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/outputs.tf"
+    dest: "{{ tf_dir }}/outputs.tf"
   tags: configuration
 
 - name: Create requirements.txt
   template:
     src: requirements.txt.j2
-    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/requirements.txt"
+    dest: "{{ tf_dir }}/requirements.txt"
   tags: configuration
 
 - name: Create makefile
   template:
     src: Makefile.j2
-    dest: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}/Makefile"
+    dest: "{{ tf_dir }}/Makefile"
   tags: configuration
+- block:
+  - name: Run the terraform initialization
+    command: "terraform init -no-color"
+    tags: configuration
+    args:
+      chdir: "{{ tf_dir }}"
 
-# run terraform init
-- name: Run the terraform initialization
-  command: "terraform init -no-color"
-  args:
-    chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
+  - name: Run the terraform update modules
+    command: "terraform get -update -no-color"
+    tags: configuration  
+    args:
+      chdir: "{{ tf_dir }}"
+
+  - name: Import networking
+    shell: make tf-import-networking
+    tags: state
+    args:
+      chdir: "{{ tf_dir }}"
+
+  - name: Run the terraform plan
+    command: "terraform plan -no-color {{ terraform_arg }}"
+    tags: state
+    args:
+      chdir: "{{ tf_dir }}"
+
+  - name: Run the installation on AWS
+    command: "terraform apply -auto-approve -no-color {{ terraform_arg }}"
+    tags: apply
+    args:
+      chdir: "{{ tf_dir }}"
+
   environment:
     AWS_DEFAULT_REGION: "{{ aws_region }}"
-  tags: configuration
 
-- name: Run the terraform update modules
-  command: "terraform get -update -no-color"
-  args:
-    chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
-  environment:
-    AWS_DEFAULT_REGION: "{{ aws_region }}"
-  tags: configuration
-
-#run terraform plan
-- name: Import networking
-  shell: make tf-import-networking
-  environment:
-    AWS_DEFAULT_REGION: "{{ aws_region }}"
-  args:
-    chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
-  tags: state
-
-- name: Run the terraform plan
-  command: "terraform plan -no-color {{ terraform_arg }}"
-  args:
-    chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
-  environment:
-    AWS_DEFAULT_REGION: "{{ aws_region }}"
-  tags: state
-
-#run terraform apply -auto-approve
-- name: Run the installation on AWS
-  command: "terraform apply -auto-approve -no-color {{ terraform_arg }}"
-  args:
-    chdir: "{{ terraform_data_dir }}/{{ organization_name }}/{{ project_type }}/{{ project_name }}/{{ project_deployment_environment }}"
-  environment:
-    AWS_DEFAULT_REGION: "{{ aws_region }}"
-  tags: apply

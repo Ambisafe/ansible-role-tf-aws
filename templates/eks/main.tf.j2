@@ -219,12 +219,16 @@ resource "aws_security_group_rule" "kube-cluster-{{name}}-ingress-node-https" {
 }
 
 ########### Worker Node # AutoScaling Group
-data "aws_ami" "eks-worker" {
+data "aws_ami" "eks-worker-{{name}}" {
   filter {
     name   = "name"
     values = ["ambisafe-amazon-linux-2-kube-worker-*"]
   }
-
+  {% if tf_ami_owners is defined %}
+  owners = {{ tf_ami_owners | to_json }}
+  {% else %}
+  owners = ["self"]
+  {% endif %}
   most_recent = true
 }
 
@@ -239,9 +243,9 @@ data "aws_ami" "eks-worker" {
 locals {
   kube-node-{{name}}-userdata = <<USERDATA
 #!/bin/bash -xe
-CONSUL_HOSTNAME={{ cluster_hostnames["kube-worker"] }}-$(python -c 'import uuid; print(hex(uuid.getnode())[-6:])')
+CONSUL_HOSTNAME={{ cluster_hostnames["kube-worker"] }}-$(python -c 'import uuid; print(hex(uuid.getnode())[-7:-1]).lower()')
 ansible-playbook -e hostname=$$CONSUL_HOSTNAME /etc/ansible/set-hostname.yml
-ansible-playbook -e "{consul_datacenter: ${data.aws_region.current.name}, \
+ansible-playbook -e "{consul_datacenter: {{var.datacenter}}, \
                                       consul_domain: {{var.consul_domain}}, \
                                       consul_acl_master_token: masterhyastertoken, \
                                       consul_addr: 10.0.2.2, \
@@ -277,7 +281,7 @@ USERDATA
 resource "aws_launch_configuration" "kube-{{name}}" {
   associate_public_ip_address = true
   iam_instance_profile        = "{{ "${aws_iam_instance_profile.kube-node-" + name + ".name}" }}"
-  image_id                    = "${data.aws_ami.eks-worker.id}"
+  image_id                    = "${data.aws_ami.eks-worker-{{name}}.id}"
   instance_type               = "{{ var.instance_type }}"
   name_prefix                 = "{{ name }}"
   security_groups             = ["{{ "${aws_security_group.kube-node-" + name + ".id}" }}"]
@@ -301,12 +305,12 @@ resource "aws_autoscaling_group" "kube-node-{{name}}" {
   placement_group      = "{{ "${aws_placement_group.kube-node-" + name + ".id}" }}"
   min_size             = {% if var.min_size is defined %}{{var.min_size}}{% else %}{{ availability_zones | length }}{% endif %}
   max_size             = "{% if var.max_size is defined %}{{var.max_size}}{% else %}${ {{ availability_zones | length }} * {{ var.workers_per_zone }} }{% endif %}"
-  name                 = "kube-node-{{name}}"
+  name                 = "{{name}}-kube-node"
   vpc_zone_identifier  = [{% for az in availability_zones%}"${aws_subnet.{{ var.networking }}-{{az}}-private.id}", {%endfor%}]
 
   tag {
     key                 = "Name"
-    value               = "kube-node-{{name}}"
+    value               = "{{name}}-kube-node"
     propagate_at_launch = true
   }
 
@@ -316,8 +320,13 @@ resource "aws_autoscaling_group" "kube-node-{{name}}" {
     propagate_at_launch = true
   }
   tag {
-    key                 = "consul_datacenter"
-    value               = "${data.aws_region.current.name}"
+    key                 = "datacenter"
+    value               = "{{ var.datacenter }}"
+    propagate_at_launch = true
+  }
+  tag {
+    key                 = "consul"
+    value               = "agent"
     propagate_at_launch = true
   }
   tag {

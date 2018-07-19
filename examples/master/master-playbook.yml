@@ -1,0 +1,37 @@
+- name: eks test
+  hosts: localhost
+  gather_facts: false
+  vars:
+    terraform_dir: "/tmp/tf/config"
+    terraform_data_dir: "/tmp/tf/data"
+    default_tags: &default_tags
+      project_name: "${var.project_name}"
+      project_type: "${var.project_type}"
+      project_deployment_environment: "${var.project_deployment_environment}"
+      organization_name: "${var.organization_name}"
+    tf_variable:
+      project_name:
+        default: "{{ project_name }}"
+      project_type:
+        default: "{{ project_type }}"
+      project_deployment_environment:
+        default: "{{ project_deployment_environment }}"
+      organization_name:
+        default: "{{ organization_name }}"
+      reachabilities:
+        description: list of reachability zones. WARNING! change this list only on `ansible-role-tf-aws` call
+        default:
+          - private
+          - public
+
+    tf_primitive:
+      - aws: "{{ aws_region }}"
+      - networking: default
+      - master:
+          name: ambisafe
+          tags: *default_tags
+          var:
+            token: 1151fccc-803b-40a4-84b5-077b7e304a11
+    
+  roles:
+    - { role: ansible-role-tf-aws }

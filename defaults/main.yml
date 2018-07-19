@@ -94,14 +94,6 @@ tf_primitive_default:
       engine: redis
       node_type: cache.t2.small
       route53: false
-  eks:
-    var:
-      instance_type: t2.micro
-      ingress: []
-      networking: default
-      region: "{{ aws_region }}"
-      consul_domain: "{{ project_env_zone }}"
-      workers_per_zone: 1
   networking:
     var:
       default: true
@@ -117,6 +109,29 @@ tf_primitive_default:
         prevent_destroy: true
         ignore_changes:
           - tags
+  master:
+    var:
+      region: "{{ aws_region }}"
+      datacenter: "${data.aws_region.current.name}"
+      consul_domain: "{{ project_env_zone }}"
+      instance_type: t2.micro
+      networking: default
+      consul_ui: true
+      vault_ui: true
+      workers_per_zone: 1
+      reachability: public
+      with_public_ip: true
+      key:
+        public: "{{ '~/.ssh/id_rsa.pub' | expanduser }}"
+        private: "{{ '~/.ssh/id_rsa' | expanduser }}"
+  eks:
+    var:
+      instance_type: t2.medium
+      networking: default
+      region: "{{ aws_region }}"
+      consul_domain: "{{ project_env_zone }}"
+      workers_per_zone: 1
+      datacenter: "${aws_region.current.name}"
 
 tf_variable_defaults:
   reachabilities:
@@ -124,6 +139,7 @@ tf_variable_defaults:
       - private
       - public
 
+tf_module_path: modules
 
 # project_s3: false
 # project_ecs: false
