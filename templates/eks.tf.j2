@@ -269,6 +269,11 @@ systemctl restart kubelet kube-proxy
 USERDATA
 }
 
+resource "aws_key_pair" "this" {
+  key_name   = "tf-awx-key-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
+  public_key = "{{ eks_ssh_public_key }}"
+}
+
 resource "aws_launch_configuration" "kube" {
   associate_public_ip_address = true
   iam_instance_profile        = "${aws_iam_instance_profile.kube-node.name}"
@@ -277,6 +282,7 @@ resource "aws_launch_configuration" "kube" {
   name_prefix                 = "${var.cluster-name}"
   security_groups             = ["${aws_security_group.kube-node.id}"]
   user_data_base64            = "${base64encode(local.kube-node-userdata)}"
+  key_name                    = "tf-awx-key-{{ organization_name }}-{{ project_type }}-{{ project_name }}-{{ project_deployment_environment }}"
 
   lifecycle {
     create_before_destroy = true
