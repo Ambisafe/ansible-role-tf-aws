@@ -146,6 +146,31 @@ resource "aws_iam_role" "kube-node" {
 POLICY
 }
 
+data "aws_iam_policy_document" "this" {
+  statement {
+
+    actions = [
+          "route53:ListHostedZones",
+          "route53:ChangeResourceRecordSets",
+          "route53:ListResourceRecordSets"
+    ]
+
+    resources = [
+      "Resource": "*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "this" {
+  name        = "tf_{{ organization_name }}_{{ project_type }}_{{ project_name }}_{{ project_deployment_environment }}_eks_ext_dns"
+  policy      = "${data.aws_iam_policy_document.this.json}"
+}
+
+resource "aws_iam_policy_attachment" "kube-node-AmazonEKSEXTDNSPolicy" {
+  policy_arn = "${aws_iam_policy.this.arn}"
+  role       = "${aws_iam_role.kube-node.name}"
+}
+
 resource "aws_iam_role_policy_attachment" "kube-node-AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = "${aws_iam_role.kube-node.name}"
