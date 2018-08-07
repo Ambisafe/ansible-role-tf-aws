@@ -53,7 +53,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
   }
 
 {% if project_cloudfront_for_s3_certificate == true %}
-  "viewer_certificate" {
+  viewer_certificate {
   {% if aws_region != 'us-east-1' %}
     acm_certificate_arn = "${aws_acm_certificate.us-east-1.arn}"
   {% else %}
@@ -63,6 +63,10 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     minimum_protocol_version = "TLSv1"
   }
     depends_on = ["aws_acm_certificate_validation.default"]
+{% else %}
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
 {% endif %}
 
   {% if project_deployment_environment == 'prod' or skip_env_domain_prefix == true %}
