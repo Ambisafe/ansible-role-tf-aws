@@ -52,15 +52,14 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     Name = "tf-cf-s3-{{ organization_name }}-{{ project_type }}-{{ project_deployment_environment }}-{{ project_name }}"
   }
 
-  "viewer_certificate" {
-  {% if aws_region != 'us-east-1' %}
+  {% if project_cloudfront_for_s3_certificate == true %}
+  viewer_certificate {
     acm_certificate_arn = "${aws_acm_certificate.us-east-1.arn}"
-  {% else %}
-    acm_certificate_arn = "${aws_acm_certificate.default.arn}"
-  {% endif %}
-    ssl_support_method       = "sni-only"
+    ssl_support_method = "sni-only"
     minimum_protocol_version = "TLSv1"
   }
+  {% endif %}
+
 
   {% if project_deployment_environment == 'prod' or skip_env_domain_prefix == true %}
     aliases = ["{{ domain_url }}"]
