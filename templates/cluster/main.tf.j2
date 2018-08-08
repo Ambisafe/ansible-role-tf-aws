@@ -94,7 +94,7 @@ data "aws_ami" "{{name}}-consul-master" {
 
 
 
-{% if var.key.name is defined %}
+{% if var.key.name is defined and var.key.name %}
 {% set aws_instance_keypair_name = var.key.name %}
 {% else %}
 resource "aws_key_pair" "{{name}}-consul-master" {
