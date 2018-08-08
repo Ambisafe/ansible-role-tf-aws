@@ -45,6 +45,9 @@ tf_primitive:
 project_name: name
 project_type: project
 project_deployment_environment: develop
+default_key: &default_key
+  public: ~/.ssh/id_rsa.pub
+  private: ~/.ssh/id_rsa
 
 tf_primitive_default:
   s3:
@@ -94,6 +97,7 @@ tf_primitive_default:
       engine: redis
       node_type: cache.t2.small
       route53: false
+
   networking:
     var:
       default: true
@@ -109,38 +113,29 @@ tf_primitive_default:
         prevent_destroy: true
         ignore_changes:
           - tags
-  master:
+  cluster:
     var:
+      config:
+        consul_datacenter: "{{ organization_name }}"
+        consul_domain: "{{ consul_domain }}"
       region: "{{ aws_region }}"
-      datacenter: "${data.aws_region.current.name}"
-      consul_domain: "{{ project_env_zone }}"
+      gitlab:
+        root_password: geiR5ihietha
+        root_token: vev9ohMaiphugh4Hie7chiejug4ieB1aiza1Iesheevaich5meiv9Iem2ithooCo
+      kubernetes:
+        - name: review
+      networking: default
       instance_type: t2.micro
-      networking: default
-      consul_ui: true
-      vault_ui: true
-      workers_per_zone: 1
-      reachability: public
-      with_public_ip: true
-      key:
-        public: "{{ '~/.ssh/id_rsa.pub' | expanduser }}"
-        private: "{{ '~/.ssh/id_rsa' | expanduser }}"
-  eks:
-    var:
-      instance_type: t2.medium
-      networking: default
-      region: "{{ aws_region }}"
-      consul_domain: "{{ project_env_zone }}"
-      workers_per_zone: 1
-      datacenter: "${aws_region.current.name}"
+      key: *default_key
+      ami_image:
+        - ambisafe-ubuntu-18.04-node-*
 
-tf_variable_defaults:
-  reachabilities:
-    default:
-      - private
-      - public
+reachabilities:
+  - private
+  - public
 
-tf_module_path: modules
-
+tf_ami_owners:
+  - self
 # project_s3: false
 # project_ecs: false
 # project_eks: false
