@@ -31,7 +31,6 @@ tf-import-{{name}}-subnets: tf-import-{{name}}-vpc
 	[ "${%raw%}{{%endraw%}{{name}}-{{az}}-{{reachability}}{%raw%}}{%endraw%}" != "null" ] && terraform import aws_subnet.{{name}}-{{az}}-{{reachability}} {%raw%}${{% endraw %}{{name}}-{{az}}-{{reachability}}{%raw%}}{%endraw%} || true
 {% endfor %}
 {% endfor %}
-
 {% for subnet_name, filter in network.filter.items() %}
 {% if '{' in filter %}
 {{subnet_name}}-default-cidr:=$(shell echo {{ filter }} | python3 helpers/generate-default-subnet-cidr.py ${vpc-cidr-{{name}}{%raw%}}{%endraw%})
@@ -40,6 +39,16 @@ tf-import-{{name}}-subnets: tf-import-{{name}}-vpc
 {{subnet_name}}:="{{ filter }}"
 {% endif %}
 {% endfor %}
+
+tf-state-unlink-subnets-{{name}}:
+	{% for subnet_name in network.filter -%}
+	terraform state rm aws_subnet.{{ subnet_name }} {% if not loop.last %}&&{% endif %} \
+	{% endfor -%}
+	|| true
+
+tf-state-unlink-vpc-{{name}}:
+	terraform state rm aws{% if var.default %}_default{%endif%}_vpc.{{name}} || true
+
 
 tf-import-{{name}}-networking: tf-import-{{name}}-subnets
 
