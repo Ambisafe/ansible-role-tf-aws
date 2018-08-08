@@ -81,7 +81,7 @@
       chdir: "{{ tf_dir }}"
 
   - name: Import networking
-    shell: make tf-import-networking
+    shell: make
     tags: state
     args:
       chdir: "{{ tf_dir }}"
