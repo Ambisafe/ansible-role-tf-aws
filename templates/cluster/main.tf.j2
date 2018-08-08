@@ -1,0 +1,376 @@
+{% if var.availability_zones is defined %}
+{% set availability_zones = var.availability_zones %}
+{% else %}
+{% set availability_zones = aws_availability_zones[var.region] %}
+{% endif %}
+
+resource "aws_iam_instance_profile" "consul-master-{{name}}" {
+  name_prefix = "{{ var.config.consul_datacenter }}-{{ name }}"
+  path        = "/"
+  role        = "${aws_iam_role.{{name}}-consul-master-instance-role.name}"
+
+  # aws_launch_configuration.launch_configuration in this module sets create_before_destroy to true, which means
+  # everything it depends on, including this resource, must set it as well, or you'll get cyclic dependency errors
+  # when you try to do a terraform destroy.
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+data "aws_iam_policy_document" "{{name}}-consul-master-instance-role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "{{name}}-consul-master-instance-role" {
+  name_prefix        = "{{ var.config.consul_datacenter }}"
+  assume_role_policy = "${data.aws_iam_policy_document.{{name}}-consul-master-instance-role.json}"
+
+  # aws_iam_instance_profile.consul-master-{{name}} in this module sets create_before_destroy to true, which means
+  # everything it depends on, including this resource, must set it as well, or you'll get cyclic dependency errors
+  # when you try to do a terraform destroy.
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+module "iam_policies" {
+  source = "modules/consul-iam-policies"
+  iam_role_id = "${aws_iam_role.{{name}}-consul-master-instance-role.id}"
+}
+
+resource "aws_security_group" "{{ name }}-consul-master" {
+  name        = "{{ name }}-consul-master"
+  description = "{{ name }}-consul-master security group"
+  vpc_id      = "${data.aws_vpc.{{ var.networking }}.id}"
+  tags = {
+    consul_datacenter = "{{ var.config.consul_datacenter }}"
+  }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+{% if var.ingress is defined %}
+{% for ingress in var.ingress %}
+  ingress {
+    from_port = {{ ingress.from_port }}
+    to_port = {{ ingress.to_port }}
+    protocol = "{{ ingress.protocol }}"
+    cidr_blocks = {{ ingress.cidr_blocks | to_json }}
+  }
+{% endfor %}
+{% endif %}
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
+  }  
+}
+
+data "aws_ami" "{{name}}-consul-master" {
+  filter {
+    name   = "name"
+    values = {{ var.ami_image | to_json }}
+  }
+  owners = {{ tf_ami_owners | to_json }}
+  most_recent = true
+}
+
+
+
+{% if var.key.name is defined %}
+{% set aws_instance_keypair_name = var.key.name %}
+{% else %}
+resource "aws_key_pair" "{{name}}-consul-master" {
+  key_name   = "{{organization_name}}-{{name}}-consul-master"
+  public_key = "${file(pathexpand("{{var.key.public}}"))}"
+}
+{% set aws_instance_keypair_name = organization_name + '-' + name + '-consul-master' %}
+{% endif %}
+locals {
+  instance-keypair-name-{{name}} = "{{ aws_instance_keypair_name }}"
+}
+
+
+locals {
+  {{name}}-cluster-bootstrap-provision-user = "ubuntu"
+  {{name}}-cluster-bootstrap-provision-script = <<BOOTSTRAP_USERDATA{% raw %}
+#!/usr/bin/env ansible-playbook -b
+- hosts: localhost
+  vars:{% endraw %}
+
+    consul_datacenter: {{ var.config.consul_datacenter | to_json }}
+    consul_domain: {{ var.config.consul_domain | to_json}}
+    initial_vault:
+      - path: kv/gitlab-root-credentials
+        data: 
+          root_password: {{ var.gitlab.root_password | to_json}}
+          root_token: {{ var.gitlab.root_token | to_json}}
+
+    {% raw %}
+    bootstrap_mode:
+      bootstrap_expect: 1
+  tasks:
+    - block:
+      - shell: python -c 'import uuid; print(hex(uuid.getnode())[-7:-1]).lower()'
+        register: mac_addr
+      - shell: hostnamectl set-hostname {{ mac_addr.stdout }}
+      - shell: yq w /etc/cloud/cloud.cfg preserve_hostname true
+      - set_fact:
+          initial_vault_b64: "{{ initial_vault | to_yaml | b64encode }}"
+      - name: set agent config
+        copy:
+          dest: /etc/nomad/agent/90-node-local-config.hcl
+          content: |
+            datacenter = "{{ consul_datacenter }}"
+            client { 
+                node_class = "master"
+                meta {"bootstrap" = "true"}
+            }
+      - systemd:
+          name: "{{ item }}"
+          enabled: true
+          state: restarted
+        with_items:
+          - nomad-agent
+          - nomad-server
+      - import_tasks: /opt/ansible/cluster-bootstrap-tasks.yml
+      - meta: flush_handlers
+      - pause:
+          seconds: 20
+      - systemd:
+          name: "{{ item }}"
+          state: restarted
+        with_items:
+          - consul
+          - nomad-server
+      - file:
+          path: /etc/consul.d/99-server-bootstrap-mode.json
+          state: absent
+      - pause:
+          seconds: 2
+      - shell: doit -f continous-deployment.py -a dispatch_system
+        args:
+          chdir: /opt
+      - shell: doit -f continous-deployment.py -a dispatch_batch
+        args:
+          chdir: /opt
+      - shell: doit -f continous-deployment.py -a dispatch_service
+        args:
+          chdir: /opt
+      tags:
+      - always
+{% endraw %}
+BOOTSTRAP_USERDATA
+}
+
+resource "aws_instance" "{{name}}-consul-master" {
+  instance_type = "{{ var.instance_type }}"
+  ami = "${data.aws_ami.{{name}}-consul-master.id}"
+  key_name = "${local.instance-keypair-name-{{name}}{%raw%}}{%endraw%}"
+  vpc_security_group_ids = ["${aws_security_group.{{ name }}-consul-master.id}"]
+  subnet_id = "${aws_subnet.{{var.networking}}-{{ availability_zones[0] }}-public.id}"
+
+  tags = {
+    Name    = "{{ name }}-consul-master"
+    organization = "{{ organization_name }}"
+    "consul:server" = "{{ organization_name }}"
+    "nomad:server" = "{{ organization_name }}"
+    environment = "{{ project_deployment_environment }}"
+  }
+  iam_instance_profile = "${aws_iam_instance_profile.consul-master-{{name}}.name}"
+}
+
+resource "null_resource" "{{name}}-cluster-bootstrap-provision" {
+  triggers = {
+    recreated                 = "${aws_instance.{{name}}-consul-master.id}"
+    provision_script          = "${local.{{name}}-cluster-bootstrap-provision-script}"
+  }
+  connection = {
+    host = "${aws_instance.{{name}}-consul-master.public_ip}"
+    user = "${local.{{name}}-cluster-bootstrap-provision-user}"
+    private_key = "${file(pathexpand("{{var.key.private}}"))}"
+  }  
+  provisioner "file" {
+    content      = "${local.{{ name }}-cluster-bootstrap-provision-script}"
+    destination = "/tmp/cluster-bootstrap.yml"
+  }
+  provisioner "remote-exec" {
+    inline = "sudo ansible-playbook -vvv -t install,agent,server,acl,policy,vault-integration,consul-integration,ui /tmp/cluster-bootstrap.yml"
+  }
+}
+
+#========
+locals {
+  default-cluster-master-provision-script = <<BOOTSTRAP_USERDATA{% raw %}
+#!/usr/bin/env ansible-playbook -b
+
+- hosts: localhost
+  vars:{% endraw %}
+
+    consul_datacenter: {{ var.config.consul_datacenter }}
+    consul_domain: {{ var.config.consul_domain }}
+  {% raw %}
+  tasks:
+    - block:
+      - shell: python -c 'import uuid; print(hex(uuid.getnode())[-7:-1]).lower()'
+        register: mac_addr
+      - shell: hostnamectl set-hostname {{ mac_addr.stdout }}
+      - shell: yq w /etc/cloud/cloud.cfg preserve_hostname true
+      - persist_variable:
+          name: consul_datacenter
+          value: "{{ consul_datacenter }}"
+
+      - persist_variable:
+          name: consul_domain
+          value: "{{ consul_domain }}"
+      - name: set agent config
+        copy:
+          dest: /etc/nomad/agent/90-node-local-config.json
+          content: |
+            datacenter = "{{ consul_datacenter }}"
+            client { 
+                node_class = "master"
+            }
+      - name: configure consul agent
+        include_role:
+          name: consul
+      - name: configure nomad agent
+        include_role:
+          name: nomad
+      tags:
+        - always
+{% endraw %}
+BOOTSTRAP_USERDATA
+}
+
+resource "aws_instance" "{{name}}-cluster-master" {
+  instance_type = "{{ var.instance_type }}"
+  ami = "${data.aws_ami.{{name}}-consul-master.id}"
+  key_name = "${local.instance-keypair-name-{{name}}{%raw%}}{%endraw%}"
+  vpc_security_group_ids = ["${aws_security_group.{{ name }}-consul-master.id}"]
+  subnet_id = "${aws_subnet.{{var.networking}}-{{ availability_zones[0] }}-public.id}"
+
+  tags = {
+    Name    = "{{ name }}-consul-master"
+    organization = "{{ organization_name }}"
+    "consul:server" = "{{ organization_name }}"
+    "nomad:server" = "{{ organization_name }}"
+    environment = "{{ project_deployment_environment }}"
+  }
+  iam_instance_profile = "${aws_iam_instance_profile.consul-master-{{name}}.name}"
+}
+
+resource "null_resource" "{{name}}-cluster-master-provision" {
+  triggers = {
+    recreated                 = "${aws_instance.{{name}}-cluster-master.id}"
+    provision_script          = "${local.{{name}}-cluster-master-provision-script}"
+  }
+  connection = {
+    host = "${aws_instance.{{name}}-cluster-master.public_ip}"
+    user = "${local.{{name}}-cluster-bootstrap-provision-user}"
+    private_key = "${file(pathexpand("{{var.key.private}}"))}"
+  }
+  provisioner "file" {
+    content      = "${local.{{ name }}-cluster-master-provision-script}"
+    destination = "/tmp/master-bootstrap.yml"
+  }
+  provisioner "remote-exec" {
+    inline = "sudo ansible-playbook -vvv --skip-tags=server -t install,agent,server,acl,policy,vault-integration,consul-integration,ui /tmp/master-bootstrap.yml"
+  }
+}
+
+
+
+{% raw %}
+# gitlab 
+#========
+locals {
+  default-cluster-gitlab-provision-script = <<BOOTSTRAP_USERDATA
+#!/usr/bin/env ansible-playbook -b
+
+- hosts: localhost
+  vars:
+    consul_datacenter: ambisafe
+    consul_domain: ambisafe.dc
+  
+  tasks:
+    - block:
+      - shell: python -c 'import uuid; print(hex(uuid.getnode())[-7:-1]).lower()'
+        register: mac_addr
+      - shell: hostnamectl set-hostname {{ mac_addr.stdout }}
+      - shell: yq w /etc/cloud/cloud.cfg preserve_hostname true
+      - persist_variable:
+          name: consul_datacenter
+          value: "{{ consul_datacenter }}"
+
+      - persist_variable:
+          name: consul_domain
+          value: "{{ consul_domain }}"
+      - name: set agent config
+        copy:
+          dest: /etc/nomad/agent/90-node-local-config.json
+          content: |
+            datacenter = "{{ consul_datacenter }}"
+            client { meta {"gitlab" = "true"} }
+      - name: configure consul agent
+        include_role:
+          name: consul
+      - name: configure nomad agent
+        include_role:
+          name: nomad
+      tags:
+        - always
+BOOTSTRAP_USERDATA
+}
+
+resource "aws_instance" "default-cluster-gitlab" {
+  instance_type = "t2.medium"
+  ami = "${data.aws_ami.default-consul-master.id}"
+  key_name = "${local.instance-keypair-name-default}"
+  vpc_security_group_ids = ["${aws_security_group.default-consul-master.id}"]
+  subnet_id = "${aws_subnet.default-a-public.id}"
+
+  tags = {
+    Name    = "default-consul-gitlab"
+    organization = "ambisafe"
+    environment = "develop"
+  }
+  iam_instance_profile = "${aws_iam_instance_profile.consul-master-default.name}"
+}
+
+resource "null_resource" "default-cluster-gitlab-provision" {
+  triggers = {
+    recreated                 = "${aws_instance.default-cluster-gitlab.id}"
+    provision_script          = "${local.default-cluster-gitlab-provision-script}"
+  }
+  connection = {
+    host = "${aws_instance.default-cluster-gitlab.public_ip}"
+    user = "${local.default-cluster-bootstrap-provision-user}"
+    private_key = "${file(pathexpand("~/.ssh/id_rsa"))}"
+  }
+  provisioner "file" {
+    content      = "${local.default-cluster-gitlab-provision-script}"
+    destination = "/tmp/gitlab-bootstrap.yml"
+  }
+  provisioner "remote-exec" {
+    inline = "sudo ansible-playbook -vvv --skip-tags=server -t install,agent,acl,policy,vault-integration,consul-integration,ui /tmp/gitlab-bootstrap.yml"
+  }
+}
+{% endraw %}
