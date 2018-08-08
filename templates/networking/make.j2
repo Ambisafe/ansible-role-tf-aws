@@ -1,5 +1,5 @@
 {% set network = namespace(filter={}) %}
-{% if var.vpc_id is undefined %}
+{% if var.vpc_id is undefined or var.vpc_id == None %}
 vpc-id-{{ name }}:=$(shell echo { default: {{ var.default }}, region: {{ var.region }}, cidr: {{ var.cidr }} } | python3 helpers/filter-first-vpc.py)
 {% else %}
 vpc-id-{{ name }}="{{ var.vpc_id }}"
