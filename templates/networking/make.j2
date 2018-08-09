@@ -1,10 +1,10 @@
 {% set network = namespace(filter={}) %}
 {% if var.vpc_id is undefined or var.vpc_id == None %}
-vpc-id-{{ name }}:=$(shell echo { default: {{ var.default }}, region: {{ var.region }}, cidr: {{ var.cidr }} } | python3 helpers/filter-first-vpc.py)
+vpc-id-{{ name }}:=$(shell echo { region: {{ var.region }}, cidr: {{ var.cidr }} } | python3 helpers/filter-first-vpc.py)
 {% else %}
 vpc-id-{{ name }}="{{ var.vpc_id }}"
 {% endif %}
-vpc-cidr-{{ name }}=$(shell aws ec2 --region={{var.region}} describe-vpcs --vpc-ids ${vpc-{{name}}{%raw%}}{%endraw%} --output=text --query='Vpcs[0].CidrBlockAssociationSet[0].CidrBlock')
+vpc-cidr-{{ name }}="{{ var.cidr }}"
 tf-import-{{name}}-vpc:
 	@[ "${%raw%}{{%endraw%}vpc-id-{{name}}{%raw%}}{%endraw%}" != "null" ] && terraform import aws{% if var.default %}_default{%endif%}_vpc.{{name}} ${%raw%}{{%endraw%}vpc-id-{{name}}{%raw%}}{%endraw%} || true
 
