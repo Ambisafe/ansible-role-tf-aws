@@ -1,6 +1,6 @@
 {% set network = namespace(filter={}) %}
 {% if var.vpc_id is undefined or var.vpc_id == None %}
-vpc-id-{{ name }}:=$(shell echo { region: {{ var.region }}, cidr: {{ var.cidr }} } | PYTHONPATH=/usr/lib/python3.6/site-packages/ python3 helpers/filter-first-vpc.py)
+vpc-id-{{ name }}:=$(shell echo { default: true, region: {{ var.region }}, cidr: {{ var.cidr }} } | PYTHONPATH=/usr/lib/python3.6/site-packages/ python3 helpers/filter-first-vpc.py)
 {% else %}
 vpc-id-{{ name }}="{{ var.vpc_id }}"
 {% endif %}
