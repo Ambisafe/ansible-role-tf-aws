@@ -25,6 +25,9 @@
     state: directory
   tags: configuration
 
+- shell: env
+  tags: configuration
+
 # - name: Clean modules path
 #   file:
 #     state: absent
