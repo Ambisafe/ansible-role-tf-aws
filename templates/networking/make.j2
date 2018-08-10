@@ -1,6 +1,6 @@
 {% set network = namespace(filter={}) %}
 {% if var.vpc_id is undefined or var.vpc_id == None %}
-vpc-id-{{ name }}:=$(shell echo { region: {{ var.region }}, cidr: {{ var.cidr }} } | python3 helpers/filter-first-vpc.py)
+vpc-id-{{ name }}:=$(shell echo { region: {{ var.region }}, cidr: {{ var.cidr }} } | PYTHONPATH=/usr/lib/python3.6/site-packages/ python3 helpers/filter-first-vpc.py)
 {% else %}
 vpc-id-{{ name }}="{{ var.vpc_id }}"
 {% endif %}
@@ -33,8 +33,8 @@ tf-import-{{name}}-subnets: tf-import-{{name}}-vpc
 {% endfor %}
 {% for subnet_name, filter in network.filter.items() %}
 {% if '{' in filter %}
-{{subnet_name}}-default-cidr:=$(shell echo {{ filter }} | python3 helpers/generate-default-subnet-cidr.py ${vpc-cidr-{{name}}{%raw%}}{%endraw%})
-{{subnet_name}}:=$(shell echo {{ filter }} | python3 helpers/filter-first-subnet.py ${vpc-id-{{name}}{%raw%}}{%endraw%} ${%raw%}{{%endraw%}{{subnet_name}}-default-cidr})
+{{subnet_name}}-default-cidr:=$(shell echo {{ filter }} | PYTHONPATH=/usr/lib/python3.6/site-packages/ python3 helpers/generate-default-subnet-cidr.py ${vpc-cidr-{{name}}{%raw%}}{%endraw%})
+{{subnet_name}}:=$(shell echo {{ filter }} | PYTHONPATH=/usr/lib/python3.6/site-packages/ python3 helpers/filter-first-subnet.py ${vpc-id-{{name}}{%raw%}}{%endraw%} ${%raw%}{{%endraw%}{{subnet_name}}-default-cidr})
 {% else %}
 {{subnet_name}}:="{{ filter }}"
 {% endif %}
