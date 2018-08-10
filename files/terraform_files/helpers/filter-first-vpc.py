@@ -6,7 +6,7 @@ query = yaml.load(sys.stdin)
 client = boto3.client('ec2', region_name=query['region'])
 filters = [{
     "Name": "isDefault",
-    "Values": [str(query['default']).lower()]
+    "Values": [str(query.get('default', False)).lower()]
 }]
 if not query['default']:
     filters.append({
