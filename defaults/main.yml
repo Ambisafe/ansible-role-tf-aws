@@ -60,6 +60,7 @@ elasticache_engine: "redis"
 elasticache_node_type: "cache.t2.small"
 elasticacheport: 6379
 elasticache_num_cache_nodes: 1
+elasticache_engine_version: "3.2.10"
 elasticache_parameter_group_name: "default.redis3.2"
 
 db_skip_final_snapshot: true
