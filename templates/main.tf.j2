@@ -22,15 +22,15 @@ data "aws_availability_zones" "available" {}
   }
 
   resource "aws_default_subnet" "a" {
-    availability_zone = "{{ aws_region }}a"
+    availability_zone = "{{ aws_region }}d"
   }
 
   resource "aws_default_subnet" "b" {
-    availability_zone = "{{ aws_region }}b"
+    availability_zone = "{{ aws_region }}e"
   }
 
   resource "aws_default_subnet" "c" {
-    availability_zone = "{{ aws_region }}c"
+    availability_zone = "{{ aws_region }}f"
   }
 {% endif %}
 
